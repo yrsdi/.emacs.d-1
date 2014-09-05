@@ -58,7 +58,10 @@
           (lambda () (setq sws-tab-width 4)))
 
 (require 'highlight-symbol)
-(highlight-symbol-mode)
+(add-hook 'js3-mode-hook 'highlight-symbol-mode)
+(add-hook 'lisp-mode-hook 'highlight-symbol-mode)
+(add-hook 'ruby-mode-hook 'highlight-symbol-mode)
+(add-hook 'markdown-mode-hook 'highlight-symbol-mode)
 
 
 ;; for edit in chrome extension
