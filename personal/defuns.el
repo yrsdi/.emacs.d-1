@@ -132,3 +132,11 @@
         (funcall find-file-in-repo)
       (shell-command (format "cd %s; git clone git@github.com:segmentio/%s.git" segment-dir repo))
       (funcall find-file-in-repo))))
+
+(defun t/delete-file-and-buffer ()
+  "Delete the current file and kill the current buffer."
+  (interactive)
+  (delete-file (buffer-file-name (current-buffer)))
+  (kill-buffer (current-buffer)))
+
+(global-set-key (kbd "C-c K") 't/delete-file-and-buffer)
