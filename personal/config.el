@@ -1,4 +1,6 @@
-(load-theme 'solarized-light t)
+(disable-theme 'zenburn)
+(menu-bar-mode -1)
+
 (setq mac-allow-anti-aliasing nil)
 (set-frame-font (font-spec :family "Monaco" :size 10))
 (setq default-frame-alist '((font . "Monaco-10")))
