@@ -70,6 +70,8 @@
 
 ;; for edit in chrome extension
 (edit-server-start)
+
 (eval-after-load "web-mode"
   '(setq web-mode-tag-auto-close-style 2))
 
+(server-start)
