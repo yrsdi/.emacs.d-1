@@ -15,3 +15,5 @@
 (global-set-key (kbd "C-c u") 'browse-url-at-point)
 
 (global-set-key (kbd "<C-return>") 't-newline-and-indent-up)
+
+(global-set-key (kbd "C-\\") 'er/expand-region)
