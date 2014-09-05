@@ -63,6 +63,10 @@
 (add-hook 'ruby-mode-hook 'highlight-symbol-mode)
 (add-hook 'markdown-mode-hook 'highlight-symbol-mode)
 
+(add-to-list 'auto-mode-alist '("\\.bats$" . sh-mode))
+(add-hook 'sh-mode-hook (lambda nil
+                          (setq sh-basic-offset 2)
+                          (setq sh-basic-indentation 2)))
 
 ;; for edit in chrome extension
 (edit-server-start)
