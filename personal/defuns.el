@@ -55,7 +55,7 @@
 (defun t/find-org-file ()
   "Find a .org file to edit."
   (interactive)
-  (ido-find-file-in-dir "~/org"))
+  (ido-find-file-in-dir "~/Dropbox/org"))
 
 (defun t/find-config-file ()
   "Find a personal config file to edit."

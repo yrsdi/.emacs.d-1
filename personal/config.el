@@ -26,7 +26,7 @@
 
 (setq-default tab-width 2)
 
-(setq org-agenda-files (split-string (shell-command-to-string "find ~/org/*")))
+(setq org-agenda-files (split-string (shell-command-to-string "find ~/Dropbox/org/*")))
 
 (setq company-idle-delay .3)
 
