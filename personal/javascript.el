@@ -224,4 +224,11 @@
     (unless first-line
       (indent-line-to offset))))
 
+(add-hook 'js2-mode-hook (lambda () (yas-minor-mode-on)))
+
+(add-hook 'js2-mode-hook
+          (lambda ()
+            (set (make-local-variable 'company-backends)
+                 '((company-dabbrev-code company-yasnippet)))))
+
 (provide 'javascript)
