@@ -111,6 +111,8 @@
 
 (add-hook 'find-file-hook (lambda () (global-font-lock-mode -1)))
 
+(add-hook 'magit-mode-hook (lambda () (global-unset-key [tab])))
+
 (add-hook 'sgml-mode-hook 'emmet-mode)
 (add-hook 'css-mode-hook  'emmet-mode)
 (add-hook 'web-mode-hook  'emmet-mode)
