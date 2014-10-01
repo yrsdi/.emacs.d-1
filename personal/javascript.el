@@ -225,6 +225,9 @@
       (indent-line-to offset))))
 
 (add-hook 'js2-mode-hook (lambda () (yas-minor-mode-on)))
+(add-hook 'js2-mode-hook (lambda () (subword-mode)))
+
+
 
 (add-hook 'js2-mode-hook
           (lambda ()
