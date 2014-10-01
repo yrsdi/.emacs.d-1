@@ -1,7 +1,7 @@
 (setq-default js2-allow-rhino-new-expr-initializer nil)
 (setq-default js2-auto-indent-p t)
 (setq-default js2-enter-indents-newline t)
-(setq-default js2-global-externs '("module" "require" "buster" "sinon" "assert" "refute" "setTimeout" "clearTimeout" "setInterval" "clearInterval" "location" "__dirname" "console" "JSON"))
+(setq-default js2-global-externs '("module" "require" "buster" "sinon" "assert" "refute" "setTimeout" "clearTimeout" "setInterval" "clearInterval" "location" "__dirname" "console" "JSON" "describe" "it" "setup" "afterEach" "beforeEach" "before" "after"))
 (setq-default js2-idle-timer-delay 0.1)
 (setq-default js2-indent-on-enter-key t)
 (setq-default js2-mirror-mode nil)
