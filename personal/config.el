@@ -4,7 +4,8 @@
 (setq mac-allow-anti-aliasing nil)
 (set-frame-font (font-spec :family "Monaco" :size 10))
 (setq default-frame-alist '((font . "Monaco-10")))
-(global-linum-mode 1)
+(global-linum-mode -1)
+(global-hl-line-mode -1)
 
 (when (memq window-system '(mac ns))
   (exec-path-from-shell-initialize))
@@ -104,4 +105,9 @@
 
 (global-set-key [tab] 'tab-indent-or-complete)
 
+(setq-default global-font-lock-mode nil)
+
+(global-font-lock-mode -1)
+
+(add-hook 'find-file-hook (lambda () (global-font-lock-mode -1)))
 (server-start)
