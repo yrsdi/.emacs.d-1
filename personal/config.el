@@ -110,4 +110,9 @@
 (global-font-lock-mode -1)
 
 (add-hook 'find-file-hook (lambda () (global-font-lock-mode -1)))
+
+(add-hook 'sgml-mode-hook 'emmet-mode)
+(add-hook 'css-mode-hook  'emmet-mode)
+(add-hook 'web-mode-hook  'emmet-mode)
+(setq emmet-move-cursor-between-quotes t)
 (server-start)
