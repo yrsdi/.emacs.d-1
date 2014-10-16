@@ -140,3 +140,11 @@
   (kill-buffer (current-buffer)))
 
 (global-set-key (kbd "C-c K") 't/delete-file-and-buffer)
+
+(defun t/github-open-file ()
+  "View the current file in a web browser on GitHub."
+  (interactive)
+  (let* ((root (helm-open-github--root-directory))
+         (repo-path (file-relative-name (buffer-file-name) root)))
+    (helm-open-github--from-file-action repo-path)))
+(global-set-key (kbd "C-c o F") 't/github-open-file)
