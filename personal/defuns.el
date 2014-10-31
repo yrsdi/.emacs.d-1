@@ -148,3 +148,11 @@
          (repo-path (file-relative-name (buffer-file-name) root)))
     (helm-open-github--from-file-action repo-path)))
 (global-set-key (kbd "C-c o F") 't/github-open-file)
+
+(defun t/projectile-ack (&optional args)
+  "Ack in specified directory."
+  (interactive)
+  (let ((current-prefix-arg t))
+    (call-interactively 'projectile-ack)))
+(add-hook 'projectile-mode-hook (lambda () (define-key projectile-mode-map (kbd "C-c p s a") 't/projectile-ack)))
+(add-hook 'projectile-mode-hook (lambda () (define-key projectile-mode-map (kbd "s-p s a") 't/projectile-ack)))
