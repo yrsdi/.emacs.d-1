@@ -127,3 +127,5 @@
   \(fn arg char)"
   'interactive)
 (global-set-key "\M-Z" 'zap-up-to-char)
+
+(setq uniquify-strip-common-suffix nil)
