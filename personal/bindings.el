@@ -17,3 +17,4 @@
 (global-set-key (kbd "<C-return>") 't/newline-and-indent-up)
 
 (global-set-key (kbd "C-\\") 'er/expand-region)
+(global-set-key (kbd "C->") 'mc/mark-all-like-this-dwim)
