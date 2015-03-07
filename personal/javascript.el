@@ -14,12 +14,11 @@
 (setq-default js2-basic-offset 2)
 (setq-default js2-bounce-indent-p t)
 ;; (setq-default js2-bounce-indent-p nil)
-(setq-default js2-mode-indent-ignore-first-tab t)
+(setq-default js2-mode-indent-ignore-first-tab nil)
 (setq-default js2-show-parse-errors nil)
 (setq-default js2-strict-missing-semi-warning nil)
 (setq-default js2-strict-trailing-comma-warning t) ;; jshint does not warn about this now for some reason
 (setq js2-auto-indent-p nil)
-
 
 (autoload 'flymake-jshint "flymake-jshint"
   "Error and linting support mode for JavaScript." t nil)
@@ -55,6 +54,9 @@
 ;; Tern.JS
 (add-to-list 'company-backends 'company-tern)
 
+(setq company-tern-property-marker "")
+
+
 (defun my-aget (key map)
   (cdr (assoc key map)))
 
@@ -81,9 +83,11 @@
 (add-hook 'projectile-mode-hook (lambda () (define-key projectile-mode-map (kbd "C-c p a") 'tj/projectile-find-other-file)))
 (add-hook 'projectile-mode-hook (lambda () (define-key projectile-mode-map (kbd "s-p a") 'tj/projectile-find-other-file)))
 
-(add-hook 'js2-mode-hook
-          (lambda ()
-            (set (make-local-variable 'company-backends)
-                 '((company-dabbrev-code company-yasnippet)))))
+;; (add-hook 'js2-mode-hook
+;;           (lambda ()
+;;             (set (make-local-variable 'company-backends)
+;;                  '((company-dabbrev-code company-yasnippet)))))
+
+(add-hook 'js2-mode-hook (lambda () (tern-mode)))
 
 (provide 'javascript)
