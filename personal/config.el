@@ -129,3 +129,27 @@
 (global-set-key "\M-Z" 'zap-up-to-char)
 
 (setq uniquify-strip-common-suffix nil)
+
+(add-to-list 'load-path "~/.emacs.d/el-get/el-get")
+
+(require 'el-get)
+
+(unless (require 'el-get nil 'noerror)
+  (with-current-buffer
+      (url-retrieve-synchronously
+       "https://raw.githubusercontent.com/dimitri/el-get/master/el-get-install.el")
+    (goto-char (point-max))
+    (eval-print-last-sexp)))
+
+(add-to-list 'el-get-recipe-path "~/.emacs.d/el-get-user/recipes")
+
+(add-to-list 'package-archives
+             '("SunriseCommander" . "http://joseito.republika.pl/sunrise-commander/") t)
+
+(require 'sunrise-commander)
+(require 'sunrise-x-loop)
+(require 'sunrise-x-tree)
+
+(setq multi-term-program "/bin/zsh")
+
+(el-get 'sync)
