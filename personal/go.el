@@ -1,4 +1,4 @@
-(setenv "GOPATH" (expand-file-name (concat (getenv "HOME") "/dev/go")))
+(setenv "GOPATH" (expand-file-name (concat (getenv "HOME") "/dev")))
 
 (require 'company-go)
 
