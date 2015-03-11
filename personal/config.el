@@ -152,4 +152,6 @@
 
 (setq multi-term-program "/bin/zsh")
 
+(add-to-list 'completion-ignored-extensions ".test")
+
 (el-get 'sync)
