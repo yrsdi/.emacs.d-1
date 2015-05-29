@@ -155,3 +155,10 @@
 (add-to-list 'completion-ignored-extensions ".test")
 
 (el-get 'sync)
+
+(defun tj-disable-final-newline ()
+  (interactive)
+  (set (make-local-variable 'require-final-newline) nil))
+
+(require 'dot-mode)
+(add-hook 'find-file-hooks 'dot-mode-on)
