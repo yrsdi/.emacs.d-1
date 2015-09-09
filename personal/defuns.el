@@ -123,7 +123,7 @@
 
 (defun s/goto (repo)
   (interactive "sREPO: ")
-  (let* ((segment-dir "~/dev/segmentio/")
+  (let* ((segment-dir "~/dev/src/github.com/segmentio/")
          (repo-dir (concat segment-dir repo))
          (find-file-in-repo (lambda ()
                               (let ((default-directory repo-dir))
