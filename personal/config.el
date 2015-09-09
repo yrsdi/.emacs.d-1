@@ -160,5 +160,12 @@
   (interactive)
   (set (make-local-variable 'require-final-newline) nil))
 
+(add-to-list 'exec-path "~/dev/bin")
+
+(global-set-key (kbd "s-t") 'projectile-find-file)
+(global-set-key (kbd "s-F") 'ack)
+
+(window-numbering-mode)
+
 (require 'dot-mode)
 (add-hook 'find-file-hooks 'dot-mode-on)
