@@ -49,7 +49,7 @@
 
 (defun eshell--execute-command (command save-excursion?)
   (let ((body #'(lambda nil
-                  (eshell--insert-command command))))
+                  (eshell-insert-command command))))
     (if save-excursion?
         (save-excursion
           (funcall body))
