@@ -8,14 +8,22 @@
 (setq ring-bell-function 'ignore)
 (setq prelude-clean-whitespace-on-save t)
 (setq scroll-margin 10)
+
 (setq prelude-whitespace nil)
 (setq prelude-clean-whitespace-on-save nil)
+
+(setq company-tooltip-align-annotations t)
+(setq company-tern-property-marker "")
+
+(modify-syntax-entry ?_ "w" text-mode-syntax-table) 
 
 (disable-theme 'zenburn)
 (global-font-lock-mode -1)
 (menu-bar-mode -1)
 (set-frame-font (font-spec :family "Operator Mono" :size 13 :weight 'normal))
 (global-hl-line-mode -1)
+
+(setq vc-handled-backends nil)
 
 (use-package exec-path-from-shell
   :ensure t
@@ -24,7 +32,15 @@
 
 (use-package markdown-mode
   :ensure t
-  :config
+
+  :init
+  (add-to-list 'company-dabbrev-code-modes 'markdown-mode)
+
+  :mode
+  ("\\.markdown$" . markdown-mode)
+  ("\\.md$" . markdown-mode)
+  
+  :config  
   (defun my-markdown-hook ()
     (flycheck-mode))
   (add-hook 'markdown-mode-hook 'my-markdown-hook))
@@ -56,6 +72,7 @@
   (setq company-minimum-prefix-length 3)
   (setq company-abort-manual-when-too-short 3)
   (setq company-dabbrev-downcase nil)
+  (setq company-dabbrev-ignore-case t)
   (setq company-clang-arguments '("-framework" "UIKit"))
   :bind
   ("TAB" . company-indent-or-complete-common))
@@ -99,6 +116,10 @@
 (use-package projectile-rails
   :ensure t
   :config
+  (use-package helm-projectile
+    :config
+    (setq projectile-completion-system 'helm)
+    (helm-projectile-on))
   (add-hook 'ruby-mode-hook 'robe-mode)
   (add-to-list 'company-backends 'company-robe)
   (add-hook 'projectile-mode-hook 'projectile-rails-on))
@@ -108,6 +129,18 @@
   (setq sh-basic-offset 2)
   (setq sh-basic-indentation 2)
   :mode ("\\.bats$" . sh-mode))
+
+(use-package vkill
+  :commands vkill
+  :ensure t
+  :bind ("C-x L" . vkill-and-helm-occur)
+  :preface
+  (defun vkill-and-helm-occur ()
+    (interactive)
+    (vkill)
+    (call-interactively #'helm-occur))
+  :config
+  (setq vkill-show-all-processes t))
 
 (use-package yasnippet
   :ensure t
@@ -162,7 +195,6 @@
 (global-set-key (kbd "s-t") 'projectile-find-file)
 (global-set-key (kbd "s-T") 'prelude-goto-symbol)
 (global-set-key (kbd "C-M-t") 'projectile-switch-project)
-(global-set-key (kbd "s-F") 'ag)
 
 (defun magit-key-mode--add-default-options (arguments)
   (if (eq (car arguments) 'pulling)
@@ -191,6 +223,7 @@
   '(define-key prelude-mode-map (kbd "C-c s") nil))
 
 (setq helm-split-window-default-side "right")
+
 (setq comment-multi-line t)
 (setq-default css-indent-offset 2)
 (add-to-list 'projectile-globally-ignored-directories "Godeps/_workspace")
@@ -198,7 +231,6 @@
 (add-to-list 'projectile-globally-ignored-directories "deps")
 (add-to-list 'projectile-globally-ignored-directories "node_modules")
 (setq-default indent-tabs-mode nil)
-(global-set-key (kbd "RET") 'newline-and-indent)
 
 (global-set-key (kbd "s-s") 'save-buffer)
 
@@ -243,8 +275,6 @@
   ("M-g g" . avy-goto-line))
 
 (add-hook 'cider-mode-hook #'eldoc-mode)
-(add-hook 'cider-repl-mode-hook #'company-mode)
-(add-hook 'cider-mode-hook #'company-mode)
 
 (add-hook 'cider-repl-mode-hook #'subword-mode)
 (add-hook 'cider-repl-mode-hook #'paredit-mode)
@@ -266,14 +296,13 @@
   '(define-key magit-mode-map "v"
      #'tj/visit-pull-request-url))
 
-
-
-(use-package linum
+(use-package nlinum
   :ensure t
-  :init
-  (setq linum-format "%d ")
   :config
-  (global-linum-mode 1))
+  (global-nlinum-mode 1))
+
+(setq nlinum--width 3)
+(setq nlinum-format "%d ")
 
 (use-package eshell
   :ensure t
@@ -297,6 +326,14 @@
   :ensure t
   :mode "Dockerfile")
 
+(use-package docker
+  :init
+  (setenv "DOCKER_TLS_VERIFY" "1")
+  (setenv "DOCKER_HOST" "tcp://192.168.99.100:2376")
+  (setenv "DOCKER_CERT_PATH" "/Users/tj/.docker/machine/machines/dev")
+  (setenv "DOCKER_MACHINE_NAME" "dev")
+  :ensure t)
+
 (use-package hcl-mode
   :ensure t)
 
@@ -310,9 +347,10 @@
 (use-package magit :ensure t)
 
 (use-package ag :ensure t)
-(use-package smex :ensure t)
-(use-package smartparens :ensure t)
+
 (use-package restclient :ensure t
+  :mode
+  ("\\.rest\\'" . restclient-mode)
   :config
   (defun my-response-loaded-hook ()
     (flycheck-mode -1))
@@ -332,20 +370,38 @@
   (setq ediff-split-window-function 'split-window-horizontally)
   (setq ediff-merge-split-window-function 'split-window-horizontally))
 
+(use-package company-tern
+  :ensure t
+  :defer t
+  :init  
+  (with-eval-after-load 'company
+    (add-to-list 'company-backends 'company-tern)))
+
 (use-package js2-mode
   :ensure t
   :init
   (setq js-indent-level 2)
   (setq-default js2-global-externs '("module" "require" "buster" "sinon" "assert" "refute" "setTimeout" "clearTimeout" "setInterval" "clearInterval" "location" "__dirname" "console" "JSON"))
   (setq-default js2-strict-inconsistent-return-warning nil)
+  
   (setq-default flycheck-disabled-checkers
                 (append flycheck-disabled-checkers
                         '(javascript-jshint)))
-  :mode ("\\.js\\'" . js2-mode)
+
+  (setq-default flycheck-disabled-checkers
+                (append flycheck-disabled-checkers
+                        '(json-jsonlist)))
+
+  
+  :mode
+  ("\\.js\\'" . js2-mode)
+  ("\\.json\\'" . js2-mode)
+  
   :interpreter ("node" . js2-mode)
   :bind
   ("M-j" . c-indent-new-comment-line)
   ("C-c C-j" . js2-jump-to-definition)
+  ("M-." . tern-find-definition)
   :config
   (defun js2-match-async-arrow-function ()
     (when (and (js2-contextual-kwd-p (js2-current-token) "async")
@@ -353,13 +409,7 @@
                (/= (js2-peek-token) js2-DOT))
       (js2-record-face 'font-lock-keyword-face)
       (js2-get-token)
-      t))
-  (use-package company-tern
-    :ensure t
-    :init
-    (setq company-tern-property-marker "")
-    :config
-    (add-to-list 'company-backends 'company-tern))
+      t))  
   (defun my-js2-mode-hook ()
     (electric-indent-mode -1)
     (tern-mode)
@@ -367,57 +417,90 @@
     (subword-mode))
   (add-hook 'js2-mode-hook 'my-js2-mode-hook))
 
+(use-package expand-region
+  :ensure t
+  :bind ("C-=" . er/expand-region))
+
 (yas-global-mode)
 
 (use-package web-mode
   :ensure t
   :init
+  (setq-default flycheck-disabled-checkers
+                (append flycheck-disabled-checkers
+                        '(javascript-jshint)))
+  (flycheck-add-mode 'javascript-eslint 'web-mode)
   (setq web-mode-markup-indent-offset 2)
   (setq web-mode-css-indent-offset 2)
+  (setq web-mode-attr-indent-offset 2)
   (setq web-mode-code-indent-offset 2)
   (setq web-mode-enable-auto-closing t)
   (setq web-mode-enable-auto-expanding t)
   (setq web-mode-enable-auto-opening t)
   (setq web-mode-enable-auto-pairing t)
   (setq web-mode-tag-auto-close-style 2)
+  (setq web-mode-content-types-alist
+        '(("jsx" . "\\.js[x]?\\'")))
+  (setq web-mode-engines-alist
+        '(("reactjs" . "\\.js$")))
+  (with-eval-after-load 'web-mode
+    (add-to-list 'web-mode-indentation-params '("lineup-args" . nil))
+    (add-to-list 'web-mode-indentation-params '("lineup-concats" . nil))
+    (add-to-list 'web-mode-indentation-params '("lineup-calls" . nil)))
+  (setq tj--javascript-common-imenu-regex-list
+        '(("Controller" "[. \t]controller([ \t]*['\"]\\([^'\"]+\\)" 1)
+          ("Module" "[. \t]module( *['\"]\\([a-zA-Z0-9_.]+\\)['\"], *\\[" 1)
+          ("Function" "function[ \t]+\\([a-zA-Z0-9_$.]+\\)[ \t]*(" 1)
+          ("Class" "class[ \t]+\\([a-zA-Z_.]+\\)" 1)
+          ("Constant" "const[ \t]+\\([a-zA-Z_.]+\\)" 1)
+          ("Function" "^[ \t]*\\([a-zA-Z0-9_$.]+\\)[ \t]*=[ \t]*function[ \t]*(" 1)          
+          ))
+  (defun tj--js-imenu-make-index ()
+    (save-excursion
+      (imenu--generic-function tj--javascript-common-imenu-regex-list)))
+  (defun tj--web-mode-hook nil
+    (subword-mode)
+    (setq-local imenu-create-index-function 'tj--js-imenu-make-index))
+  (add-hook 'web-mode-hook #'tj--web-mode-hook)
   :mode
   ("\\.hbs$" . web-mode)
   ("\\.eex$" . web-mode)
+  ("\\.js$" . web-mode)
   :config
   (defun tj/html-insert-open-and-close-tag ()
-  "Generates an open and close HTML snippet using the current word."
-  (interactive)
-  (let ((inserting-new-tag nil))
-    (if (looking-back "[-A-Za-z0-9:_]")
-        (progn (set-mark-command nil)
-               (while (looking-back "[-A-Za-z0-9:_]")
-                 (backward-char)))
-      (setq inserting-new-tag t)
-      (set-mark-command nil)
-      (insert "p")
-      (exchange-point-and-mark))
-    (let ((tag (buffer-substring (region-beginning) (region-end))))
-      (delete-char (string-width tag))
-      (cond ((string-match "\\`[bh]r\\'" tag)
-             (insert (concat "<" tag ">")))
-            ((string-match (concat "\\`\\(?:img\\|meta\\|link\\|"
-                                   "input\\|base\\|area\\|col\\|"
-                                   "frame\\|param\\)\\'")
-                           tag)
-             (yas/expand-snippet (concat "<" tag " $1>$0")))
-            (t
-             (yas/expand-snippet
-              (if inserting-new-tag
-                  (concat "<${1:"
+    "Generates an open and close HTML snippet using the current word."
+    (interactive)  
+    (let ((inserting-new-tag nil))
+      (if (looking-back "[-A-Za-z0-9:_]")
+          (progn (set-mark-command nil)
+                 (while (looking-back "[-A-Za-z0-9:_]")
+                   (backward-char)))
+        (setq inserting-new-tag t)
+        (set-mark-command nil)
+        (insert "p")
+        (exchange-point-and-mark))
+      (let ((tag (buffer-substring (region-beginning) (region-end))))
+        (delete-char (string-width tag))
+        (cond ((string-match "\\`[bh]r\\'" tag)
+               (insert (concat "<" tag ">")))
+              ((string-match (concat "\\`\\(?:img\\|meta\\|link\\|"
+                                     "input\\|base\\|area\\|col\\|"
+                                     "frame\\|param\\)\\'")
+                             tag)
+               (yas/expand-snippet (concat "<" tag " $1>$0")))
+              (t
+               (yas/expand-snippet
+                (if inserting-new-tag
+                    (concat "<${1:"
+                            tag
+                            "}>$0</${1:"
+                            "$(and (string-match \"[-A-Za-z0-9:_]+\" yas-text) "
+                            "(match-string 0 yas-text))}>")
+                  (concat "<"
                           tag
-                          "}>$0</${1:"
-                          "$(and (string-match \"[-A-Za-z0-9:_]+\" yas-text) "
-                          "(match-string 0 yas-text))}>")
-                (concat "<"
-                        tag
-                        "$1>$0</"
-                        tag
-                        ">"))))))))
+                          "$1>$0</"
+                          tag
+                          ">"))))))))
   (defun tj/erb-insert-or-toggle-erb-tag ()
     "Insert an ERb tag if the point isn't currently in one, or toggle the type."
     (interactive)
@@ -451,8 +534,7 @@
                  (backward-char 3)))))
   :bind
   ("C-c >" . tj/erb-insert-or-toggle-erb-tag)
-  ("C-c <" . tj/html-insert-open-and-close-tag)
-  )
+  ("C-c <" . tj/html-insert-open-and-close-tag))
 
 (use-package ag
   :ensure t
@@ -503,21 +585,46 @@
     (compilation-mode)
     (display-buffer errbuf)))
 
+(use-package company-quickhelp          ; Documentation popups for Company
+  :ensure t
+  :defer t
+  :init (add-hook 'global-company-mode-hook #'company-quickhelp-mode))
+
+(use-package company-go
+  :ensure t
+  :defer t
+  :init
+  (with-eval-after-load 'company
+    (add-to-list 'company-backends 'company-go)))
+
+(use-package go-eldoc
+  :ensure t
+  :defer t
+  :init
+  (add-hook 'go-mode-hook 'go-eldoc-setup))
+
+(use-package go-rename
+  :ensure t
+  :defer t
+  :init
+  (autoload 'go-rename "go-rename" nil t))
+
 (use-package go-mode
   :defer t
   :ensure t
   :init
-  (setq gofmt-command "goimports")  
+  ;; (setq gofmt-command "gofmt")  
   (setenv "GOPATH" (expand-file-name (concat (getenv "HOME") "/dev")))
   (setenv "GOROOT" "/usr/local/opt/go/libexec")
+  (setq company-go-show-annotation t)  
+  :bind
+  ("C-c C-c" . godoc-at-point)
+  ("M-." . godef-jump)
   :config
   (load-file "$GOPATH/src/golang.org/x/tools/cmd/oracle/oracle.el")
   (add-hook 'before-save-hook 'gofmt-before-save)
-  (use-package company-go :ensure t)
-  (set (make-local-variable 'company-backends) '(company-go))
-  (bind-key "M-." 'godef-jump)
+  (add-to-list (make-local-variable 'company-backends) 'company-go)
   (defun my-go-hook ()
-    (company-mode)
     (subword-mode)
     (flycheck-mode)
     (if (not (string-match "go" compile-command))
@@ -542,6 +649,83 @@
   :ensure t
   :bind
   ("M-j" . newline-and-indent))
+
+(use-package embrace
+  :ensure t)
+
+
+(use-package ag
+  :ensure t)
+
+(use-package helm-ag
+  :ensure t
+  :bind (("s-F" . helm-ag))
+  )
+
+(use-package helm
+  :ensure t
+  :bind (("C-c h"   . helm-command-prefix)
+         ("C-h a"   . helm-apropos)
+         ("C-x f"   . helm-multi-files)
+         ("C-c C-o"   . helm-occur)
+         ("M-H"     . helm-resume)
+         ("M-x"     . helm-M-x)
+         ("C-x C-m"     . helm-M-x)
+         ("C-x b" . helm-mini)
+         ("C-x C-f" . helm-find-files)
+         ("M-y" . helm-show-kill-ring)
+         )
+
+  :preface
+  (defun my-helm-find ()
+    (interactive)
+    (helm-find nil))
+
+  :config
+
+  (use-package helm-swoop
+    :ensure t
+
+    :init
+
+    (setq helm-buffers-fuzzy-matching t)
+    (setq helm-recentf-fuzzy-match t)
+    (setq helm-imenu-fuzzy-match t)
+    (setq helm-semantic-fuzzy-match t)
+    (setq helm-apropos-fuzzy-match t)
+    (setq helm-M-x-fuzzy-match t) 
+    (setq helm-swoop-use-fuzzy-match t)
+    (setq helm-swoop-use-line-number-face t)
+  
+    :bind (("M-i" . helm-swoop))
+
+    :config
+
+    (define-key isearch-mode-map (kbd "M-i") 'helm-swoop-from-isearch))
+  
+  (use-package helm-mode
+    :diminish helm-mode
+    :init
+    (helm-mode 1))
+
+  (use-package helm-multi-match)
+
+  (helm-autoresize-mode 1)
+
+  (bind-key "<tab>" #'helm-execute-persistent-action helm-map)
+  (bind-key "C-i" #'helm-execute-persistent-action helm-map)
+  (bind-key "C-z" #'helm-select-action helm-map)
+  (bind-key "A-v" #'helm-previous-page helm-map))
+
+
+(global-set-key (kbd "C-c c") #'embrace-commander)
+
+(defun tjj-esformatter ()
+  (interactive)
+  (shell-command (format "esformatter -i %s" (buffer-file-name))))
+
+(use-package web-beautify
+  :ensure t)
 
 (defadvice compile-goto-error (around my-compile-goto-error activate)
   (let ((display-buffer-overriding-action '(display-buffer-reuse-window (inhibit-same-window . nil))))
