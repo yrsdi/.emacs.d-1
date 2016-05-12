@@ -1,16 +1,16 @@
-;;; prelude-erlang.el --- Emacs Prelude: Erlang programming support.
+;;; prelude-elixir.el --- Emacs Prelude: Elixir programming support.
 ;;
-;; Copyright © 2011-2016 Gleb Peregud
+;; Copyright © 2014-2016 Samuel Tonini
 ;;
-;; Author: Gleb Peregud <gleber.p@gmail.com>
+;; Author: Samuel Tonini <tonini.samuel@gmail.com>
 ;; Version: 1.0.0
-;; Keywords: convenience erlang
+;; Keywords: convenience elixir
 
 ;; This file is not part of GNU Emacs.
 
 ;;; Commentary:
 
-;; Erlang is a concurrent functional language.
+;; Some basic configuration for Elixir development.
 
 ;;; License:
 
@@ -32,29 +32,9 @@
 ;;; Code:
 
 (require 'prelude-programming)
-(prelude-require-packages '(erlang))
 
-(defcustom wrangler-path nil
-  "The location of wrangler elisp directory."
-  :group 'prelude-erlang
-  :type 'string
-  :safe 'stringp)
+(prelude-require-packages '(elixir-mode alchemist))
 
-(require 'projectile)
+(provide 'prelude-elixir)
 
-(when (require 'erlang-start nil t)
-
-  (eval-after-load 'erlang-mode
-    '(progn
-       (flymake-mode)))
-
-  (when (not (null wrangler-path))
-    (add-to-list 'load-path wrangler-path)
-    (require 'wrangler)))
-
-(add-hook 'erlang-mode-hook (lambda ()
-                              (setq erlang-compile-function 'projectile-compile-project)))
-
-(provide 'prelude-erlang)
-
-;;; prelude-erlang.el ends here
+;;; prelude-elixir.el ends here
