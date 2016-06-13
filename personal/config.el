@@ -1,7 +1,8 @@
 (require 'use-package)
 
-(setq-default global-font-lock-mode nil)
-(setq mac-allow-anti-aliasing t)
+;; (setq mac-allow-anti-aliasing t)
+(setq prelude-guru nil)
+
 (setq-default tab-width 2)
 (setq multi-term-program "/usr/local/bin/zsh")
 (setq explicit-shell-file-name "/usr/local/bin/zsh")
@@ -9,18 +10,26 @@
 (setq prelude-clean-whitespace-on-save t)
 (setq scroll-margin 10)
 
+(global-set-key (kbd "M-z") 'zap-up-to-char)
+
+(global-font-lock-mode -1)
+
+(add-hook 'prelude-prog-mode-hook
+          (lambda ()
+            (smartparens-mode -1)
+            (electric-pair-mode)
+            (electric-indent-mode)
+            )
+          t)
+
 (setq prelude-whitespace nil)
 (setq prelude-clean-whitespace-on-save nil)
 
 (setq company-tooltip-align-annotations t)
 (setq company-tern-property-marker "")
 
-(modify-syntax-entry ?_ "w" text-mode-syntax-table) 
-
-(disable-theme 'zenburn)
-(global-font-lock-mode -1)
 (menu-bar-mode -1)
-(set-frame-font (font-spec :family "Operator Mono" :size 13 :weight 'normal))
+(set-frame-font (font-spec :family "Operator Mono" :size 14 :weight 'normal))
 (global-hl-line-mode -1)
 
 (setq vc-handled-backends nil)
@@ -68,6 +77,8 @@
 (use-package company
   :ensure t
   :init
+  (setq company-dabbrev-code-modes t
+        company-dabbrev-code-everywhere t)
   (setq company-idle-delay 0.1)
   (setq company-minimum-prefix-length 3)
   (setq company-abort-manual-when-too-short 3)
@@ -166,14 +177,6 @@
   (add-hook 'css-mode-hook  'emmet-mode)
   (add-hook 'web-mode-hook  'emmet-mode))
 
-
-(autoload 'zap-up-to-char "misc"
-  "Kill up to, but not including ARGth occurrence of CHAR.
-
-  \(fn arg char)"
-  'interactive)
-(global-set-key (kbd "M-z") 'zap-up-to-char)
-
 (setq uniquify-strip-common-suffix nil)
 
 (add-to-list 'package-archives
@@ -220,7 +223,9 @@
 
 
 (eval-after-load "prelude-mode"
-  '(define-key prelude-mode-map (kbd "C-c s") nil))
+  '(progn
+     (define-key prelude-mode-map (kbd "C-c s") nil)
+     (define-key prelude-mode-map (kbd "C-c i") nil)))
 
 (setq helm-split-window-default-side "right")
 
@@ -274,6 +279,13 @@
   ("C-j" . avy-goto-char-2)
   ("M-g g" . avy-goto-line))
 
+(use-package avy)
+
+(use-package avy-zap
+  :ensure t
+  :bind
+  (("M-Z" . avy-zap-up-to-char-dwim)))
+
 (add-hook 'cider-mode-hook #'eldoc-mode)
 
 (add-hook 'cider-repl-mode-hook #'subword-mode)
@@ -306,14 +318,30 @@
 
 (use-package eshell
   :ensure t
+  
   :init
   (require 'em-smart)
+  
+  :bind ("M-s" . other-window-or-split)
+
+  :config
+
   (setq eshell-where-to-jump 'begin)
   (setq eshell-review-quick-commands nil)
   (setq eshell-smart-space-goes-to-end t)
-  (setq eshell-path-env (concat "/usr/local/bin:" eshell-path-env))
-  (setenv "PATH" (concat "/usr/local/bin:" (getenv "PATH")))
-  :bind ("M-s" . other-window-or-split))
+
+  (defun tjj-eshell-mode-hook ()
+    (setenv "PATH" (concat "/usr/local/bin:" (getenv "PATH")))
+    (setq eshell-path-env (concat "/usr/local/bin:" eshell-path-env)))
+  
+  
+  (add-hook 'eshell-mode-hook 'tjj-eshell-mode-hook)
+  
+  (use-package multi-eshell
+    :ensure t
+
+    :init
+    (setq multi-eshell-shell-function '(eshell))))
 
 (use-package magit
   :ensure t
@@ -438,6 +466,8 @@
   (setq web-mode-enable-auto-expanding t)
   (setq web-mode-enable-auto-opening t)
   (setq web-mode-enable-auto-pairing t)
+  (add-to-list 'web-mode-comment-formats '("jsx" . "//"))
+  (add-to-list 'web-mode-comment-formats '("javascript" . "//"))
   (setq web-mode-tag-auto-close-style 2)
   (setq web-mode-content-types-alist
         '(("jsx" . "\\.js[x]?\\'")))
@@ -460,6 +490,8 @@
       (imenu--generic-function tj--javascript-common-imenu-regex-list)))
   (defun tj--web-mode-hook nil
     (subword-mode)
+    (setq comment-start "//"
+          comment-end   "")
     (setq-local imenu-create-index-function 'tj--js-imenu-make-index))
   (add-hook 'web-mode-hook #'tj--web-mode-hook)
   :mode
@@ -616,10 +648,15 @@
   ;; (setq gofmt-command "gofmt")  
   (setenv "GOPATH" (expand-file-name (concat (getenv "HOME") "/dev")))
   (setenv "GOROOT" "/usr/local/opt/go/libexec")
-  (setq company-go-show-annotation t)  
+  (setq company-go-show-annotation t)
+  
   :bind
+
+  ("C-c C-d" . go-guru-describe)
+  ("C-c C-g" . helm-go-package)
   ("C-c C-c" . godoc-at-point)
-  ("M-." . godef-jump)
+  ("M-." . go-guru-definition)
+  
   :config
   (load-file "$GOPATH/src/golang.org/x/tools/cmd/oracle/oracle.el")
   (add-hook 'before-save-hook 'gofmt-before-save)
@@ -668,6 +705,7 @@
          ("C-h a"   . helm-apropos)
          ("C-x f"   . helm-multi-files)
          ("C-c C-o"   . helm-occur)
+         ("C-c i" . helm-imenu)
          ("M-H"     . helm-resume)
          ("M-x"     . helm-M-x)
          ("C-x C-m"     . helm-M-x)
@@ -696,7 +734,7 @@
     (setq helm-M-x-fuzzy-match t) 
     (setq helm-swoop-use-fuzzy-match t)
     (setq helm-swoop-use-line-number-face t)
-  
+    
     :bind (("M-i" . helm-swoop))
 
     :config
@@ -720,15 +758,113 @@
 
 (global-set-key (kbd "C-c c") #'embrace-commander)
 
-(defun tjj-esformatter ()
-  (interactive)
-  (shell-command (format "esformatter -i %s" (buffer-file-name))))
-
 (use-package web-beautify
   :ensure t)
 
 (defadvice compile-goto-error (around my-compile-goto-error activate)
   (let ((display-buffer-overriding-action '(display-buffer-reuse-window (inhibit-same-window . nil))))
     ad-do-it))
+
+;; Funcs
+
+
+(defun tjj-esformatter ()
+  (interactive)
+  (shell-command (format "esformatter -i %s" (buffer-file-name))))
+
+(defun zap-to-isearch (rbeg rend)
+  "Kill the region between the mark and the closest portion of
+  the isearch match string. The behaviour is meant to be analogous
+  to zap-to-char; let's call it zap-to-isearch. The deleted region
+  does not include the isearch word. This is meant to be bound only
+  in isearch mode.
+  The point of this function is that oftentimes you want to delete
+  some portion of text, one end of which happens to be an active
+  isearch word. The observation to make is that if you use isearch
+  a lot to move the cursor around (as you should, it is much more
+  efficient than using the arrows), it happens a lot that you could
+  just delete the active region between the mark and the point, not
+  include the isearch word."
+  (interactive "r")
+  (when (not mark-active)
+    (error "Mark is not active"))
+  (let* ((isearch-bounds (list isearch-other-end (point)))
+         (ismin (apply 'min isearch-bounds))
+         (ismax (apply 'max isearch-bounds))
+         )
+    (if (< (mark) ismin)
+        (kill-region (mark) ismin)
+      (if (> (mark) ismax)
+          (kill-region ismax (mark))
+        (error "Internal error in isearch kill function.")))
+    (isearch-exit)))
+
+(define-key isearch-mode-map [(meta z)] 'zap-to-isearch)
+
+(autoload 'zap-up-to-char "misc"
+  "Kill up to, but not including ARGth occurrence of CHAR.
+
+  \(fn arg char)"
+  'interactive)
+
+(use-package sql
+  :ensure t
+
+  :init
+
+  (defun my-sql-mode-hook ()
+    (electric-indent-mode -1))
+  (add-hook 'sql-mode-hook 'my-sql-mode-hook)
+  
+  :config
+  (eval-after-load "sql"
+    '(load-library "sql-indent")))
+
+(defun orgtbl-to-gfm (table params)
+  "Convert the Orgtbl mode TABLE to GitHub Flavored Markdown."
+  (let* ((alignment (mapconcat (lambda (x) (if x "|--:" "|---"))
+                               org-table-last-alignment ""))
+         (params2
+          (list
+           :splice t
+           :hline (concat alignment "|")
+           :lstart "| " :lend " |" :sep " | ")))
+    (orgtbl-to-generic table (org-combine-plists params2 params))))
+
+(defun tjj-insert-org-to-md-table (table-name)
+  (interactive "*sEnter table name: ")
+  (insert "<!---
+#+ORGTBL: SEND " table-name " orgtbl-to-gfm
+
+-->
+<!--- BEGIN RECEIVE ORGTBL " table-name " -->
+<!--- END RECEIVE ORGTBL " table-name " -->")
+  (previous-line)
+  (previous-line)
+  (previous-line))
+
+(defun generalized-shell-command (command arg)
+  "Unifies `shell-command' and `shell-command-on-region'. If no region is
+selected, run a shell command just like M-x shell-command (M-!).  If
+no region is selected and an argument is a passed, run a shell command
+and place its output after the mark as in C-u M-x `shell-command' (C-u
+M-!).  If a region is selected pass the text of that region to the
+shell and replace the text in that region with the output of the shell
+command as in C-u M-x `shell-command-on-region' (C-u M-|). If a region
+is selected AND an argument is passed (via C-u) send output to another
+buffer instead of replacing the text in region."
+  (interactive (list (read-from-minibuffer "Shell command: " nil nil nil 'shell-command-history)
+                     current-prefix-arg))
+  (let ((p (if mark-active (region-beginning) 0))
+        (m (if mark-active (region-end) 0)))
+    (if (= p m)
+        ;; No active region
+        (if (eq arg nil)
+            (shell-command command)
+          (shell-command command t))
+      ;; Active region
+      (if (eq arg nil)
+          (shell-command-on-region p m command t t)
+        (shell-command-on-region p m command)))))
 
 (server-start)
