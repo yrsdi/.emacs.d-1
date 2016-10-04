@@ -54,6 +54,10 @@ Use in `isearch-mode-end-hook'."
   :config
   (exec-path-from-shell-initialize))
 
+(defun tj-marked ()
+  (interactive)
+  (shell-command (format "open -a \"Marked 2\" %s" (buffer-file-name))))
+
 (use-package markdown-mode
   :ensure t
 
