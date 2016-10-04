@@ -706,7 +706,7 @@ Use in `isearch-mode-end-hook'."
 
 (use-package helm-ag
   :ensure t
-  :bind (("s-F" . helm-ag))
+  :bind (("s-F" . ag))
   )
 
 (use-package helm
