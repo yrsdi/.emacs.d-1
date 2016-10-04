@@ -29,7 +29,10 @@
 (setq company-tern-property-marker "")
 
 (menu-bar-mode -1)
+
 (set-frame-font (font-spec :family "Operator Mono" :size 14 :weight 'normal))
+(add-to-list 'default-frame-alist '(font . "Operator Mono-14"))
+
 (global-hl-line-mode -1)
 
 (setq vc-handled-backends nil)
