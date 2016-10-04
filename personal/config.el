@@ -135,18 +135,6 @@ Use in `isearch-mode-end-hook'."
   (setq ruby-deep-indent-paren nil)
   :ensure t)
 
-
-(use-package projectile-rails
-  :ensure t
-  :config
-  (use-package helm-projectile
-    :config
-    (setq projectile-completion-system 'helm)
-    (helm-projectile-on))
-  (add-hook 'ruby-mode-hook 'robe-mode)
-  (add-to-list 'company-backends 'company-robe)
-  (add-hook 'projectile-mode-hook 'projectile-rails-on))
-
 (use-package sh-mode
   :init
   (setq sh-basic-offset 2)
