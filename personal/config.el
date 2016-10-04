@@ -236,6 +236,13 @@ Use in `isearch-mode-end-hook'."
 
 (setq helm-split-window-default-side "right")
 
+(defun tj-comment-line ()
+  (interactive)
+  (call-interactively #'comment-line)
+  (unless (region-active-p) (previous-line)))
+
+(global-set-key (kbd "M-;") 'tj-comment-line)
+
 (setq comment-multi-line t)
 (setq-default css-indent-offset 2)
 (add-to-list 'projectile-globally-ignored-directories "Godeps/_workspace")
