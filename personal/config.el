@@ -13,6 +13,7 @@
 (setq scroll-margin 10)
 
 (global-set-key (kbd "M-z") 'zap-up-to-char)
+(global-set-key (kbd "C-x d") 'dired-jump)
 
 (global-font-lock-mode -1)
 
