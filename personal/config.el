@@ -135,12 +135,27 @@ Use in `isearch-mode-end-hook'."
   :config
   (setq sws-tab-width 4))
 
-(use-package highlight-symbol
+(use-package auto-highlight-symbol
   :ensure t
-  :config
-  (add-hook 'lisp-mode-hook 'highlight-symbol-mode)
-  (add-hook 'ruby-mode-hook 'highlight-symbol-mode))
 
+  :init
+  
+  (global-auto-highlight-symbol-mode)
+  
+  :config
+
+  (add-to-list 'ahs-plugin-bod-modes 'go-mode)
+  (define-key auto-highlight-symbol-mode-map (kbd "M-p") 'ahs-backward)
+  (define-key auto-highlight-symbol-mode-map (kbd "M-n") 'ahs-forward)
+  (setq ahs-idle-interval 0.3) ;; if you want instant highlighting, set it to 0, but I find it annoying
+  (setq ahs-default-range 'ahs-range-whole-buffer) ;; highlight every occurence in buffer
+
+  ;; inhibits highlighting in specific places, like in comments
+  (setq ahs-inhibit-face-list '(font-lock-comment-delimiter-face
+                                font-lock-comment-face
+                                font-lock-doc-face
+                                font-lock-doc-string-face
+                                font-lock-string-face)))
 (use-package robe
   :ensure t)
 
