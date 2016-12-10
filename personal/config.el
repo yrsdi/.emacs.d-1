@@ -250,10 +250,12 @@ Use in `isearch-mode-end-hook'."
 (require 'dot-mode)
 (add-hook 'find-file-hooks 'dot-mode-on)
 
-
 (eval-after-load "prelude-mode"
   '(progn
      (define-key prelude-mode-map (kbd "C-c s") nil)
+     (define-key prelude-mode-map (kbd "M-o") nil)
+     (define-key prelude-mode-map (kbd "C-c C-i") nil)
+     (define-key prelude-mode-map (kbd "C-c g") nil)
      (define-key prelude-mode-map (kbd "C-c i") nil)))
 
 (setq helm-split-window-default-side "right")
