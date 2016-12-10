@@ -3,6 +3,8 @@
 ;; (setq mac-allow-anti-aliasing t)
 (setq prelude-guru nil)
 
+(setq flycheck-check-syntax-automatically '(save
+                                            mode-enabled))
 (setq-default tab-width 2)
 (setq multi-term-program "/usr/local/bin/zsh")
 (setq explicit-shell-file-name "/usr/local/bin/zsh")
