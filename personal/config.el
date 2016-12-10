@@ -31,6 +31,10 @@
 (setq company-tooltip-align-annotations t)
 (setq company-tern-property-marker "")
 
+(defadvice split-window (after move-point-to-new-window activate)
+  "Moves the point to the newly created window after splitting."
+  (other-window 1))
+
 (menu-bar-mode -1)
 
 (set-frame-font (font-spec :family "Operator Mono" :size 14 :weight 'normal))
