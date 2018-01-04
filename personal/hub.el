@@ -147,7 +147,7 @@
   (with-current-buffer (get-buffer-create "*hub-diff*")
     (view-mode -1)
     (erase-buffer)
-    (unless (zerop (call-process-shell-command (concat "curl -s " url) nil t))
+    (unless (zerop (call-process-shell-command (concat "curl -L -s " url) nil t))
       (error "Can't download %s" url))
     (goto-char (point-min))
     (diff-mode)

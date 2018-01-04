@@ -88,7 +88,7 @@
            :lstart "| " :lend " |" :sep " | ")))
     (orgtbl-to-generic table (org-combine-plists params2 params))))
 
-(defun tjj-insert-org-to-md-table (table-name)
+(defun tj-insert-org-to-md-table (table-name)
   (interactive "*sEnter table name: ")
   (insert "<!---
 #+ORGTBL: SEND " table-name " orgtbl-to-gfm
@@ -100,7 +100,7 @@
   (previous-line)
   (previous-line))
 
-(defun tjj/generalized-shell-command (command arg)
+(defun tj-generalized-shell-command (command arg)
   "Unifies `shell-command' and `shell-command-on-region'. If no region is
 selected, run a shell command just like M-x shell-command (M-!).  If
 no region is selected and an argument is a passed, run a shell command
@@ -124,14 +124,14 @@ buffer instead of replacing the text in region."
           (shell-command-on-region p m command t t)
         (shell-command-on-region p m command)))))
 
-(defun tjj/email ()
+(defun tj-email ()
   (interactive)
   (with-current-buffer (get-buffer-create "*email*")
     (markdown-mode)
     (toggle-word-wrap)
     (pop-to-buffer (current-buffer))))
 
-(defun tjj/comment-eclipse ()
+(defun tj-comment-eclipse ()
   (interactive)
   (let ((start (line-beginning-position))
         (end (line-end-position)))
@@ -145,9 +145,9 @@ buffer instead of replacing the text in region."
                   (end-of-line)
                   (point))))
     (comment-or-uncomment-region start end)))
-(global-set-key (kbd "M-;") 'tjj/comment-eclipse)
+(global-set-key (kbd "M-;") 'tj-comment-eclipse)
 
-(defun tjj/word-count ()
+(defun tj-word-count ()
   (interactive)
   (shell-command-on-region (point-min) (point-max) "wc -w"))
 
@@ -169,22 +169,22 @@ buffer instead of replacing the text in region."
         (add-hook 'isearch-mode-hook 'isearch-set-initial-string)
         (isearch-forward regexp-p no-recursive-edit)))))
 
-(defun tjj/newline-and-indent-up ()
+(defun tj-newline-and-indent-up ()
   (interactive)
   (line-move -1)
   (end-of-line)
   (newline-and-indent))
 
-(defun tjj/find-config-file ()
+(defun tj-find-config ()
   "Find a personal config file to edit."
   (interactive)
-  (ido-find-file-in-dir "~/.emacs.d/personal/"))
+  (find-file "~/.emacs.d/personal/config.el"))
 
-(defun tjj/only-buffer ()
+(defun tj-only-buffer ()
   (interactive)
   (mapc 'kill-buffer (cdr (buffer-list (current-buffer)))))
 
-(defun tjj/toggle-window-split ()
+(defun tj-toggle-window-split ()
   (interactive)
   (if (= (count-windows) 2)
       (let* ((this-win-buffer (window-buffer))
@@ -209,7 +209,7 @@ buffer instead of replacing the text in region."
           (select-window first-win)
           (if this-win-2nd (other-window 1))))))
 
-(defun tjj/kill-line-save (&optional arg)
+(defun tj-kill-line-save (&optional arg)
   (interactive "p")
   (save-excursion
     (copy-region-as-kill
@@ -218,23 +218,23 @@ buffer instead of replacing the text in region."
               (end-of-visible-line))
             (point)))))
 
-(global-set-key (kbd "C-c C-k") 'tjj/kill-line-save)
+(global-set-key (kbd "C-c C-k") 'tj-kill-line-save)
 
-(defun tjj/eshell (name)
+(defun tj-eshell (name)
   (interactive "sName: ")
   (let ((eshell-buffer-name (format "*eshell: %s*" name)))
     (if (get-buffer eshell-buffer-name)
         (switch-to-buffer-other-window eshell-buffer-name)
       (eshell eshell-buffer-name))))
 
-(defun tjj/eshell-execute-previous-input ()
+(defun tj-eshell-execute-previous-input ()
   (interactive)
   (save-excursion
     (switch-to-buffer-other-window eshell-buffer-name)
     (call-interactively 'eshell-previous-matching-input-from-input)
     (eshell-send-input)))
 
-(defun tjj/goto (repo)
+(defun tj-goto (repo)
   "Go to or clone the given dev `repo'."
   (interactive
    (list
@@ -246,22 +246,22 @@ buffer instead of replacing the text in region."
       (shell-command (format "cd %s; git clone git@github.com:travisjeffery/%s.git" dev-dir repo))
       (projectile-find-file-in-directory repo))))
 
-(defun tjj/github-open-file ()
+(defun tj-github-open-file ()
   "View the current file in a web browser on GitHub."
   (interactive)
   (let* ((root (helm-open-github--root-directory))
          (repo-path (file-relative-name (buffer-file-name) root)))
     (helm-open-github--from-file-action repo-path)))
-(global-set-key (kbd "C-c o F") 'tjj/github-open-file)
+(global-set-key (kbd "C-c o F") 'tj-github-open-file)
 
-(defun tjj/projectile-ack (&optional args)
+(defun tj-projectile-ack (&optional args)
   "Ack in specified directory."
   (interactive)
   (let ((current-prefix-arg t))
     (call-interactively 'projectile-ack)))
 
-(defun tjj/projectile-mode-hook ()
+(defun tj-projectile-mode-hook ()
   "My hook for projectile."
-  (define-key projectile-mode-map (kbd "C-c p s a") #'tjj/projectile-ack)
-  (define-key projectile-mode-map (kbd "s-p s a") #'tjj/projectile-ack))
-(add-hook 'projectile-mode-hook 'tjj/projectile-mode-hook)
+  (define-key projectile-mode-map (kbd "C-c p s a") #'tj-projectile-ack)
+  (define-key projectile-mode-map (kbd "s-p s a") #'tj-projectile-ack))
+(add-hook 'projectile-mode-hook 'tj-projectile-mode-hook)

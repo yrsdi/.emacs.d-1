@@ -24,3 +24,7 @@ tramp
 .emacs.desktop
 .emacs.desktop.lock
 network-security.data
+.python-environments/
+magithub
+ac-comphist.dat
+.mc-lists.el
