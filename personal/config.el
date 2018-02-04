@@ -1,20 +1,23 @@
 (require 'use-package)
 
-(setq prelude-guru nil)
-
-(setq flycheck-check-syntax-automatically '(save
-                                            mode-enabled))
+(setq flycheck-check-syntax-automatically '(save mode-enabled))
 (setq-default tab-width 2)
 (setq multi-term-program "/usr/local/bin/zsh")
 (setq explicit-shell-file-name "/usr/local/bin/zsh")
 (setq ring-bell-function 'ignore)
-(setq prelude-clean-whitespace-on-save t)
 (setq scroll-margin 10)
-
-(global-set-key (kbd "M-z") 'zap-up-to-char)
-(global-set-key (kbd "C-x d") 'dired-jump)
-
 (setq display-line-numbers nil)
+
+;;; Settings
+
+(use-package font-core
+  :config (global-font-lock-mode -1))
+
+(use-package menu-bar
+  :config (menu-bar-mode -1))
+
+(use-package misc
+  :bind ("M-z" . 'zap-up-to-char))
 
 (defun tj-newline-and-indent ()
   (interactive)
@@ -26,28 +29,49 @@
   (interactive)
   (dired-smart-shell-command "open -a iTerm $PWD" nil nil))
 
-(global-font-lock-mode -1)
-
-(defun my-diff-mode-hook ()
+(use-package diff-mode
+  :hook
   (font-lock-mode))
-(add-hook 'diff-mode-hook 'my-diff-mode-hook)
 
-(add-hook 'prelude-prog-mode-hook
-          (lambda ()
-            (setq display-line-numbers nil)
-            (smartparens-mode -1)
-            (electric-pair-mode)
-            (electric-indent-mode))
-          t)
+(use-package minibuffer
+  :config
+  (defun my-minibuffer-setup-hook ()
+    (smartparens-mode -1)
+    (electric-pair-mode -1)
+    (setq gc-cons-threshold most-positive-fixnum))
 
-(setq company-tooltip-align-annotations t)
-(setq company-tern-property-marker "")
+  (defun my-minibuffer-exit-hook ()
+    (electric-pair-mode -1)
+    (setq gc-cons-threshold 800000))
+
+  (add-hook 'minibuffer-setup-hook #'my-minibuffer-setup-hook)
+  (add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook))
+
+(use-package prelude-mode
+  :config
+  (setq prelude-guru nil)
+  (setq prelude-clean-whitespace-on-save t)
+  :hook
+  (prelude-prog-mode-hook .
+                          (lambda ()
+                            (setq display-line-numbers nil)
+                            (smartparens-mode -1)
+                            (electric-pair-mode)
+                            (electric-indent-mode))))
+
+(use-package smartparens
+  :bind (:map smartparens-mode-map
+              ("M-k" . sp-raise-sexp)
+             ("M-I" . sp-splice-sexp))
+  :hook (smartparens-mode
+         . (lambda ()
+             (unbind-key "M-s" smartparens-mode-map))))
 
 (defadvice split-window (after move-point-to-new-window activate)
   "Moves the point to the newly created window after splitting."
   (other-window 1))
 
-(menu-bar-mode -1)
+
 
 (set-frame-font (font-spec :family "Operator Mono" :size 14 :weight 'normal))
 (add-to-list 'default-frame-alist '(font . "Operator Mono-14"))
@@ -58,7 +82,13 @@
 
 (add-hook 'isearch-mode-end-hook #'endless/goto-match-beginning)
 
-(global-set-key (kbd "C-q") 'prelude-google)
+(global-set-key (kbd "C-M-g") 'prelude-google)
+
+(defun tj-eval-and-replace (value)
+  "Evaluate the sexp at point and replace it with its value"
+  (interactive (list (eval-last-sexp nil)))
+  (kill-sexp -1)
+  (insert (format "%S" value)))
 
 (defun endless/goto-match-beginning ()
   "Go to the start of current isearch match.
@@ -70,7 +100,7 @@ Use in `isearch-mode-end-hook'."
     (goto-char isearch-other-end)))
 
 (use-package exec-path-from-shell
-  :ensure t
+
   :config
   (exec-path-from-shell-initialize))
 
@@ -109,7 +139,6 @@ Use in `isearch-mode-end-hook'."
   "Offer ido-based completion for the word at point."
   (interactive)
   (my-ido-hippie-expand-with 'hippie-expand))
-
 (global-set-key (kbd "M-/") 'my-ido-hippie-expand)
 
 (defun tj-marked ()
@@ -117,29 +146,20 @@ Use in `isearch-mode-end-hook'."
   (shell-command (format "open -a \"Marked 2\" %s" (buffer-file-name))))
 
 (use-package markdown-mode
-  :ensure t
-
-  :init
-  (add-to-list 'company-dabbrev-code-modes 'markdown-mode)
-
   :mode
   ("\\.markdown$" . markdown-mode)
   ("\\.md$" . markdown-mode)
-
   :config
   (defun my-markdown-hook ()
     (flycheck-mode))
   (add-hook 'markdown-mode-hook 'my-markdown-hook))
 
 (use-package yaml-mode
-  :ensure t
-
   :mode
-
   ("\\.yaml" . yaml-mode))
 
 (use-package org
-  :ensure t
+
   :init
   (setq org-agenda-files (split-string (shell-command-to-string "find ~/Dropbox/org/*")))
   (setq org-src-lang-modes '(
@@ -159,19 +179,34 @@ Use in `isearch-mode-end-hook'."
 (add-to-list 'completion-styles 'substring t)
 
 (use-package company
-  :ensure t
   :init
   (setq company-dabbrev-code-modes t
         company-dabbrev-code-everywhere t)
   (setq company-idle-delay 0.1)
   (setq company-echo-delay 0)
+  (setq company-tooltip-align-annotations t)
+  (setq company-tern-property-marker "")
   ;; (setq company-begin-commands '(self-insert-command))
   (setq company-minimum-prefix-length 5)
   (setq company-abort-manual-when-too-short 5)
   (setq company-dabbrev-downcase nil)
   (setq company-dabbrev-ignore-case t)
   :bind
-  ("TAB" . company-indent-or-complete-common))
+  ("TAB" . company-indent-or-complete-common)
+  :config
+  ;; From https://github.com/company-mode/company-mode/issues/87
+  ;; See also https://github.com/company-mode/company-mode/issues/123
+  (defadvice company-pseudo-tooltip-unless-just-one-frontend
+      (around only-show-tooltip-when-invoked activate)
+    (when (company-explicit-action-p)
+      ad-do-it)))
+
+(use-package company-elisp
+             :after company
+             :config
+             (push 'company-elisp company-backends))
+
+(setq-local company-backend '(company-elisp))
 
 (defun dired-back-to-top ()
   (interactive)
@@ -189,29 +224,6 @@ Use in `isearch-mode-end-hook'."
 (define-key dired-mode-map
   (vector 'remap 'end-of-buffer) 'dired-jump-to-bottom)
 
-(use-package jade-mode
-  :ensure t
-  :config
-  (setq sws-tab-width 4))
-
-;; (use-package auto-highlight-symbol
-;;   :ensure t
-
-;;   :config
-;;   (add-to-list 'ahs-plugin-bod-modes 'go-mode)
-;;   (add-hook 'go-mode-hook 'auto-highlight-symbol-mode)
-;;   (define-key auto-highlight-symbol-mode-map (kbd "M-p") 'ahs-backward)
-;;   (define-key auto-highlight-symbol-mode-map (kbd "M-n") 'ahs-forward)
-;;   (setq ahs-idle-interval 0.3) ;; if you want instant highlighting, set it to 0, but I find it annoying
-;;   (setq ahs-default-range 'ahs-range-whole-buffer) ;; highlight every occurence in buffer
-
-;;   ;; inhibits highlighting in specific places, like in comments
-;;   (setq ahs-inhibit-face-list '(font-lock-comment-delimiter-face
-;;                                 font-lock-comment-face
-;;                                 font-lock-doc-face
-;;                                 font-lock-doc-string-face
-;;                                 font-lock-string-face)))
-
 (use-package highlight-symbol
   :init
   (add-hook 'go-mode-hook 'highlight-symbol-mode)
@@ -219,13 +231,196 @@ Use in `isearch-mode-end-hook'."
   (global-set-key (kbd "M-p") 'highlight-symbol-prev)
   (global-set-key (kbd "M-n") 'highlight-symbol-next))
 
-(use-package robe
-  :ensure t)
+(use-package diff-hl
+  :commands (diff-hl-mode diff-hl-dired-mode)
+  :hook (magit-post-refresh . diff-hl-magit-post-refresh))
 
-(use-package ruby-mode
-  :init
-  (setq ruby-deep-indent-paren nil)
-  :ensure t)
+(use-package diff-hl-flydiff
+  :commands diff-hl-flydiff-mode)
+
+(use-package diff-mode
+  :commands diff-mode)
+
+(use-package diffview
+  :commands (diffview-current diffview-region diffview-message))
+
+(use-package dired
+  :bind
+  (("C-c J" . dired-double-jump)
+  ("C-x d" . dired-jump))
+  :bind (:map dired-mode-map
+              ("z"     . delete-window)
+              ("e"     . ora-ediff-files)
+              ("l"     . dired-up-directory)
+              ("Y"     . ora-dired-rsync)
+              ("<tab>" . my-dired-switch-window)
+              ("M-!"   . async-shell-command)
+              ("M-G"))
+  :preface
+  (defvar mark-files-cache (make-hash-table :test #'equal))
+
+  (defun mark-similar-versions (name)
+    (let ((pat name))
+      (if (string-match "^\\(.+?\\)-[0-9._-]+$" pat)
+          (setq pat (match-string 1 pat)))
+      (or (gethash pat mark-files-cache)
+          (ignore (puthash pat t mark-files-cache)))))
+
+  (defun dired-mark-similar-version ()
+    (interactive)
+    (setq mark-files-cache (make-hash-table :test #'equal))
+    (dired-mark-sexp '(mark-similar-versions name)))
+
+  (defun dired-double-jump (first-dir second-dir)
+    (interactive
+     (list (read-directory-name "First directory: "
+                                (expand-file-name "~")
+                                nil nil "dl/")
+           (read-directory-name "Second directory: "
+                                (expand-file-name "~")
+                                nil nil "Archives/")))
+    (dired first-dir)
+    (dired-other-window second-dir))
+
+  (defun my-dired-switch-window ()
+    (interactive)
+    (if (eq major-mode 'sr-mode)
+        (call-interactively #'sr-change-window)
+      (call-interactively #'other-window)))
+
+  (defun ora-dired-rsync (dest)
+    (interactive
+     (list
+      (expand-file-name
+       (read-file-name "Rsync to: " (dired-dwim-target-directory)))))
+    (let ((files (dired-get-marked-files
+                  nil current-prefix-arg))
+          (tmtxt/rsync-command
+           "rsync -arvz --progress "))
+      (dolist (file files)
+        (setq tmtxt/rsync-command
+              (concat tmtxt/rsync-command
+                      (shell-quote-argument file)
+                      " ")))
+      (setq tmtxt/rsync-command
+            (concat tmtxt/rsync-command
+                    (shell-quote-argument dest)))
+      (async-shell-command tmtxt/rsync-command "*rsync*")
+      (other-window 1)))
+
+  (defun ora-ediff-files ()
+    (interactive)
+    (let ((files (dired-get-marked-files))
+          (wnd (current-window-configuration)))
+      (if (<= (length files) 2)
+          (let ((file1 (car files))
+                (file2 (if (cdr files)
+                           (cadr files)
+                         (read-file-name
+                          "file: "
+                          (dired-dwim-target-directory)))))
+            (if (file-newer-than-file-p file1 file2)
+                (ediff-files file2 file1)
+              (ediff-files file1 file2))
+            (add-hook 'ediff-after-quit-hook-internal
+                      `(lambda ()
+                         (setq ediff-after-quit-hook-internal nil)
+                         (set-window-configuration ,wnd))))
+        (error "no more than 2 files should be marked"))))
+
+  :config
+  (ignore-errors
+    (unbind-key "M-s f" dired-mode-map))
+
+  (defadvice dired-omit-startup (after diminish-dired-omit activate)
+    "Make sure to remove \"Omit\" from the modeline."
+    (diminish 'dired-omit-mode) dired-mode-map)
+
+  (defadvice dired-next-line (around dired-next-line+ activate)
+    "Replace current buffer if file is a directory."
+    ad-do-it
+    (while (and  (not  (eobp)) (not ad-return-value))
+      (forward-line)
+      (setq ad-return-value(dired-move-to-filename)))
+    (when (eobp)
+      (forward-line -1)
+      (setq ad-return-value(dired-move-to-filename))))
+
+  (defadvice dired-previous-line (around dired-previous-line+ activate)
+    "Replace current buffer if file is a directory."
+    ad-do-it
+    (while (and  (not  (bobp)) (not ad-return-value))
+      (forward-line -1)
+      (setq ad-return-value(dired-move-to-filename)))
+    (when (bobp)
+      (call-interactively 'dired-next-line)))
+
+  (defvar dired-omit-regexp-orig (symbol-function 'dired-omit-regexp))
+
+  ;; Omit files that Git would ignore
+  (defun dired-omit-regexp ()
+    (let ((file (expand-file-name ".git"))
+          parent-dir)
+      (while (and (not (file-exists-p file))
+                  (progn
+                    (setq parent-dir
+                          (file-name-directory
+                           (directory-file-name
+                            (file-name-directory file))))
+                    ;; Give up if we are already at the root dir.
+                    (not (string= (file-name-directory file)
+                                  parent-dir))))
+        ;; Move up to the parent dir and try again.
+        (setq file (expand-file-name ".git" parent-dir)))
+      ;; If we found a change log in a parent, use that.
+      (if (file-exists-p file)
+          (let ((regexp (funcall dired-omit-regexp-orig))
+                (omitted-files
+                 (shell-command-to-string "git clean -d -x -n")))
+            (if (= 0 (length omitted-files))
+                regexp
+              (concat
+               regexp
+               (if (> (length regexp) 0)
+                   "\\|" "")
+               "\\("
+               (mapconcat
+                #'(lambda (str)
+                    (concat
+                     "^"
+                     (regexp-quote
+                      (substring str 13
+                                 (if (= ?/ (aref str (1- (length str))))
+                                     (1- (length str))
+                                   nil)))
+                     "$"))
+                (split-string omitted-files "\n" t)
+                "\\|")
+               "\\)")))
+        (funcall dired-omit-regexp-orig)))))
+
+(use-package dired-ranger
+  :bind (:map dired-mode-map
+              ("W" . dired-ranger-copy)
+              ("X" . dired-ranger-move)
+              ("Y" . dired-ranger-paste)))
+
+(use-package discover
+  :disabled t
+  :defer 5
+  :commands global-discover-mode
+  :hook (dired-mode-hook . dired-turn-on-discover)
+  :config
+  (global-discover-mode 1))
+
+(use-package docker
+  :defer 15
+  :diminish
+  :config
+  (require 'docker-images)
+  (require 'docker-containers)
+  (require 'docker-volumes)
+  (require 'docker-networks))
 
 (use-package sh-mode
   :init
@@ -235,18 +430,11 @@ Use in `isearch-mode-end-hook'."
 
 (use-package vkill
   :commands vkill
-  :ensure t
-  :bind ("C-x L" . vkill-and-helm-occur)
   :preface
-  (defun vkill-and-helm-occur ()
-    (interactive)
-    (vkill)
-    (call-interactively #'helm-occur))
   :config
   (setq vkill-show-all-processes t))
 
 (use-package yasnippet
-  :ensure t
   :config
   (yas-reload-all))
 
@@ -261,7 +449,7 @@ Use in `isearch-mode-end-hook'."
 (add-hook 'find-file-hook (lambda () (global-font-lock-mode -1)))
 
 (use-package emmet-mode
-  :ensure t
+
   :init
   (setq emmet-move-cursor-between-quotes t)
   :config
@@ -279,10 +467,6 @@ Use in `isearch-mode-end-hook'."
 (add-to-list 'exec-path "~/dev/bin")
 (add-to-list 'exec-path "~/bin")
 
-(global-set-key (kbd "s-t") 'projectile-find-file)
-(global-set-key (kbd "s-T") 'helm-imenu)
-(global-set-key (kbd "C-M-t") 'projectile-switch-project)
-(global-set-key (kbd "C-x C-b") 'helm-buffers-list)
 
 (defun magit-key-mode--add-default-options (arguments)
   (if (eq (car arguments) 'pulling)
@@ -294,11 +478,6 @@ Use in `isearch-mode-end-hook'."
     arguments)
   )
 
-(use-package magithub
-  :after magit
-  :config
-  (setq magithub-api-timeout 15))
-
 (advice-add 'magit-key-mode :filter-args #'magit-key-mode--add-default-options)
 
 (require 'window-number)
@@ -308,18 +487,38 @@ Use in `isearch-mode-end-hook'."
 (setq window-number-inactive-foreground "black")
 (window-number-meta-mode)
 
-(require 'dot-mode)
-(add-hook 'find-file-hooks 'dot-mode-on)
+;;; Keymaps
+
+(define-key input-decode-map [?\C-m] [C-m])
+
+(eval-and-compile
+  (mapc #'(lambda (entry)
+            (define-prefix-command (cdr entry))
+            (bind-key (car entry) (cdr entry)))
+        '(("<C-m>" . my-ctrl-m-map)
+
+          ("C-h e" . my-ctrl-h-e-map)
+
+          ("C-c e" . my-ctrl-c-e-map)
+          ("C-c m" . my-ctrl-c-m-map)
+          ("C-c y" . my-ctrl-c-y-map)
+
+          ("C-."   . my-ctrl-dot-map)
+          ("C-. =" . my-ctrl-dot-equals-map)
+          ("C-. f" . my-ctrl-dot-f-map)
+          ("C-. g" . my-ctrl-dot-g-map)
+          ("C-. h" . my-ctrl-dot-h-map)
+          ("C-. m" . my-ctrl-dot-m-map)
+          ("C-. r" . my-ctrl-dot-r-map))))
 
 (eval-after-load "prelude-mode"
   '(progn
      (define-key prelude-mode-map (kbd "C-c s") nil)
      (define-key prelude-mode-map (kbd "M-o") nil)
+     (define-key prelude-mode-map (kbd "C-c o") nil)
      (define-key prelude-mode-map (kbd "C-c C-i") nil)
      (define-key prelude-mode-map (kbd "C-c g") nil)
      (define-key prelude-mode-map (kbd "C-c i") nil)))
-
-(setq helm-split-window-default-side "right")
 
 (defun tj-comment-line ()
   (interactive)
@@ -329,55 +528,54 @@ Use in `isearch-mode-end-hook'."
 
 (setq comment-multi-line t)
 (setq-default css-indent-offset 2)
-(add-to-list 'projectile-globally-ignored-directories "Godeps/_workspace")
-;; (add-to-list 'projectile-globally-ignored-directories "_build")
-(add-to-list 'projectile-globally-ignored-directories "deps")
-(add-to-list 'projectile-globally-ignored-directories "node_modules")
+
 (setq-default indent-tabs-mode nil)
 
 (global-set-key (kbd "s-s") 'save-buffer)
 
 (add-to-list 'vc-directory-exclusion-list "node_modules")
 
-(defun tj-projectile-find-other-file (&optional args)
-  "Find other js file for `ARGS'."
-  (interactive)
-  (cond
-   ((derived-mode-p `js-mode)
-    (let* ((root (projectile-project-root))
-           (this-file (buffer-file-name))
-           (file-no-prefix (s-chop-prefix root this-file)))
-      (if (s-prefix-p "test" file-no-prefix t)
-          (find-file-other-window (concat root (s-chop-prefix "test" file-no-prefix)))
-        (find-file-other-window (concat (file-name-as-directory (concat root "test")) (s-chop-prefix root this-file))))))
-   ((derived-mode-p 'go-mode)
-    (let* ((this-file (buffer-file-name))
-           (file-no-prefix (s-chop-suffix ".go" this-file)))
-      (if (s-ends-with? "test" file-no-prefix t)
-          (find-file-other-window (concat (s-chop-suffix "_test" file-no-prefix) ".go"))
-        (find-file-other-window (concat file-no-prefix "_test.go")))))
-   (t (apply 'projectile-find-other-file args))))
-
-(defun my-projectile-hook ()
-  "Customize projectile how I want it."
-  (define-key projectile-mode-map (kbd "C-c p a") 'tj-projectile-find-other-file)
-  (define-key projectile-mode-map (kbd "s-p a") 'tj-projectile-find-other-file)
-  (define-key projectile-mode-map (kbd "C-c p r") 'projectile-replace-regexp)
-  )
-(add-hook 'projectile-mode-hook 'my-projectile-hook)
-
 (use-package avy
-  :ensure t
-  :bind
-  ("C-j" . avy-goto-char-2)
-  ("M-g g" . avy-goto-line))
-
-(use-package avy)
+  :bind (("C-j" . avy-goto-char-timer))
+  :config
+  (avy-setup-default))
 
 (use-package avy-zap
-  :ensure t
+
   :bind
   (("M-Z" . avy-zap-up-to-char-dwim)))
+
+;; (use-package backup-each-save
+;;   :commands backup-each-save
+;;   :preface
+;;   (defun my-make-backup-file-name (file)
+;;     (make-backup-file-name-1 (expand-file-name (file-truename file))))
+
+;;   (defun backup-each-save-filter (filename)
+;;     (not (string-match
+;;           (concat "\\(^/tmp\\|\\.emacs\\.d/data\\(-alt\\)?/"
+;;                   "\\|\\.newsrc\\(\\.eld\\)?\\|"
+;;                   "\\(archive/sent/\\|recentf\\`\\)\\)")
+;;           filename)))
+
+;;   (defun my-dont-backup-files-p (filename)
+;;     (unless (string-match filename "\\(archive/sent/\\|recentf\\`\\)")
+;;       (normal-backup-enable-predicate filename)))
+
+;;   :hook after-save
+;;   :config
+;;   (setq backup-each-save-filter-function 'backup-each-save-filter
+;;         backup-enable-predicate 'my-dont-backup-files-p))
+
+(use-package backup-walker
+  :commands backup-walker-start)
+
+(use-package centered-cursor-mode
+  :commands centered-cursor-mode)
+
+(use-package change-inner
+  :bind (("M-i"     . change-inner)
+         ("M-o" . change-outer)))
 
 (add-hook 'cider-mode-hook #'eldoc-mode)
 
@@ -401,18 +599,60 @@ Use in `isearch-mode-end-hook'."
   '(define-key magit-mode-map "v"
      #'tj-visit-pull-request-url))
 
-(global-set-key (kbd "M-o") 'other-window)
+(use-package undo-tree
+  :config
+  (setq undo-tree-enable-undo-in-region nil))
+
+(use-package color-moccur
+  :commands (isearch-moccur isearch-all isearch-moccur-all)
+  :bind (("M-s O" . moccur)
+         :map isearch-mode-map
+         ("M-o" . isearch-moccur)
+         ("M-O" . isearch-moccur-all)))
+
+(use-package moccur-edit
+  :after color-moccur)
+
+
 
 (use-package eshell
-  :ensure t
+  :commands (eshell eshell-command)
+    :preface
+  (defvar eshell-isearch-map
+    (let ((map (copy-keymap isearch-mode-map)))
+      (define-key map [(control ?m)] 'eshell-isearch-return)
+      (define-key map [return]       'eshell-isearch-return)
+      (define-key map [(control ?r)] 'eshell-isearch-repeat-backward)
+      (define-key map [(control ?s)] 'eshell-isearch-repeat-forward)
+      (define-key map [(control ?g)] 'eshell-isearch-abort)
+      (define-key map [backspace]    'eshell-isearch-delete-char)
+      (define-key map [delete]       'eshell-isearch-delete-char)
+      map)
+    "Keymap used in isearch in Eshell.")
+
+  (defun eshell-initialize ()
+    (defun eshell-spawn-external-command (beg end)
+      "Parse and expand any history references in current input."
+      (save-excursion
+        (goto-char end)
+        (when (looking-back "&!" beg)
+          (delete-region (match-beginning 0) (match-end 0))
+          (goto-char beg)
+          (insert "spawn "))))
+
+    (add-hook 'eshell-expand-input-functions 'eshell-spawn-external-command)
+
+    (use-package em-unix
+      :defer t
+      :config
+      (unintern 'eshell/su nil)
+      (unintern 'eshell/sudo nil)))
 
   :init
+  (add-hook 'eshell-first-time-mode-hook 'eshell-initialize)
   (require 'em-smart)
 
-  :bind ("M-s" . other-window-or-split)
-
   :config
-
   (setq eshell-where-to-jump 'begin)
   (setq eshell-review-quick-commands nil)
   (setq eshell-smart-space-goes-to-end t)
@@ -421,39 +661,47 @@ Use in `isearch-mode-end-hook'."
     (setenv "PATH" (concat "/usr/local/go/bin:" "/usr/local/bin:" (getenv "PATH")))
     (setq eshell-path-env (concat "/usr/local/bin:" eshell-path-env)))
 
-
   (add-hook 'eshell-mode-hook 'tj-eshell-mode-hook)
 
   (use-package multi-eshell
-    :ensure t
-
     :init
     (setq multi-eshell-shell-function '(eshell))))
 
+(use-package eshell-bookmark
+  :hook (eshell-mode . eshell-bookmark-setup))
+
+(use-package eshell-up
+  :commands eshell-up)
+
+(use-package eshell-z
+  :after eshell)
+
+(use-package fancy-narrow
+  :bind (("C-. n" . fancy-narrow-to-region)
+         ("C-. N" . fancy-widen))
+  :commands (fancy-narrow-to-region fancy-widen))
+
 (use-package magit
-  :ensure t
+
   :init
   (setq magit-push-always-verify nil)
   :config
   (global-unset-key [tab]))
 
 (use-package dockerfile-mode
-  :ensure t
-  :mode "Dockerfile")
+  :mode "Dockerfile[a-zA-Z.-]*\\'")
 
-(use-package docker
-  :init
-  :ensure t)
+(use-package edit-indirect
+  :bind (("C-c '" . edit-indirect-region)))
 
 (use-package hcl-mode
-  :ensure t)
+  )
 
-(use-package magit
-  :ensure t)
+(use-package magit)
 
-(use-package ag :ensure t)
+(use-package ag)
 
-(use-package restclient :ensure t
+(use-package restclient
   :mode
   ("\\.rest\\'" . restclient-mode)
   :config
@@ -465,25 +713,91 @@ Use in `isearch-mode-end-hook'."
   (add-hook 'restclient-mode-hook 'my-restclient-hook))
 
 (use-package osx-clipboard
-  :ensure t
+
   :config
   (osx-clipboard-mode))
 
 (use-package ediff
-  :ensure t
+  :bind (("C-. = b" . ediff-buffers)
+         ("C-. = B" . ediff-buffers3)
+         ("C-. = c" . compare-windows)
+         ("C-. = =" . ediff-files)
+         ("C-. = f" . ediff-files)
+         ("C-. = F" . ediff-files3)
+         ("C-. = r" . ediff-revision)
+         ("C-. = p" . ediff-patch-file)
+         ("C-. = P" . ediff-patch-buffer)
+         ("C-. = l" . ediff-regions-linewise)
+         ("C-. = w" . ediff-regions-wordwise))
   :init
   (setq ediff-split-window-function 'split-window-horizontally)
   (setq ediff-merge-split-window-function 'split-window-horizontally))
 
+(use-package git-link
+  :bind ("C-. G" . git-link)
+  :commands (git-link git-link-commit git-link-homepage))
+
+(use-package git-timemachine
+  :commands git-timemachine)
+
+(use-package gitattributes-mode
+  :defer 5)
+
+(use-package gitconfig-mode
+  :defer 5)
+
+(use-package github-pullrequest
+  :commands (github-pullrequest-new
+             github-pullrequest-checkout))
+
+(use-package gitignore-mode
+  :defer 5)
+
+(use-package gitpatch
+  :commands gitpatch-mail)
+
+(use-package google-this
+  :bind ("C-. /" . google-this-search))
+
+(use-package goto-last-change
+  :bind ("C-x C-/" . goto-last-change))
+
+(use-package ialign
+  :bind ("C-. [" . ialign-interactive-align))
+
+(use-package operate-on-number
+  :bind ("C-. '" . operate-on-number-at-point))
+
+(use-package shift-number
+  :bind (("C-. +" . shift-number-up)
+         ("C-. -" . shift-number-down)))
+
+(use-package swiper
+  :after ivy
+  :bind (("C-. C-s" . swiper)
+         ("C-. C-r" . swiper))
+  :bind (:map swiper-map
+              ("M-y" . yank)
+              ("M-%" . swiper-query-replace)
+              ("C-'" . swiper-avy)
+              ("M-h" . swiper-avy)
+              ("M-c" . swiper-mc))
+  :commands swiper-from-isearch
+  :init
+  (bind-keys :map isearch-mode-map ("C-." . swiper-from-isearch)))
+
+(use-package word-count
+  :bind ("C-. W" . word-count-mode))
+
 (use-package company-tern
-  :ensure t
+
   :defer t
   :init
   (with-eval-after-load 'company
     (add-to-list 'company-backends 'company-tern)))
 
 (use-package js2-mode
-  :ensure t
+
   :init
   (setq js-indent-level 2)
   (setq-default js2-global-externs '("module" "require" "buster" "sinon" "assert" "refute" "setTimeout" "clearTimeout" "setInterval" "clearInterval" "location" "__dirname" "console" "JSON"))
@@ -524,15 +838,13 @@ Use in `isearch-mode-end-hook'."
   (add-hook 'js2-mode-hook 'my-js2-mode-hook))
 
 (use-package expand-region
-  :ensure t
+
   :bind ("C-=" . er/expand-region))
 
 (yas-global-mode)
 
-
-
 (use-package web-mode
-  :ensure t
+
   :init
   (setq-default flycheck-disabled-checkers
                 (append flycheck-disabled-checkers
@@ -652,7 +964,7 @@ Use in `isearch-mode-end-hook'."
   ("C-c <" . tjhtml-insert-open-and-close-tag))
 
 (use-package ag
-  :ensure t
+
   :config
   (global-set-key (kbd "C-c C-a") 'ag-regexp))
 
@@ -701,14 +1013,13 @@ Use in `isearch-mode-end-hook'."
     (display-buffer errbuf)))
 
 (use-package company-quickhelp          ; Documentation popups for Company
-  :ensure t
+
   :defer t
   :init (add-hook 'global-company-mode-hook #'company-quickhelp-mode))
 
-
 (use-package company-jedi)
 
-(use-package python-mode :ensure t
+(use-package python-mode
 
   :config
   (add-to-list 'company-backends 'company-jedi)
@@ -722,24 +1033,24 @@ Use in `isearch-mode-end-hook'."
 (eval-after-load 'company
   '(define-key company-active-map (kbd "M-h") #'company-quickhelp-manual-begin))
 
-(use-package neotree :ensure t)
+(use-package neotree )
 
 (use-package company-go
-  :ensure t
+
   :defer t
   :init
   (with-eval-after-load 'company
     (add-to-list 'company-backends 'company-go)))
 
 (use-package go-eldoc
-  :ensure t
+
   :defer t
   :init
   (add-hook 'go-mode-hook 'go-eldoc-setup))
 
 (use-package go-mode
   :defer t
-  :ensure t
+
   :init
 
   (load "~/dev/src/github.com/stapelberg/expanderr/expanderr.el")
@@ -759,7 +1070,6 @@ Use in `isearch-mode-end-hook'."
   ("C-c C-d" . go-guru-describe)
   ("C-c C-i" . goimports)
   ("C-c C-r" . godoctor-rename)
-  ("C-c C-g" . helm-go-package)
   ("C-c C-c" . godoc-at-point)
   ("C-c C-t" . go-test-current-file)
   ("C-c C-p" . go-playground)
@@ -775,16 +1085,17 @@ Use in `isearch-mode-end-hook'."
     (setq display-line-numbers nil)
     (subword-mode)
     (flycheck-mode)
-    (electric-indent-mode)
+    (electric-indent-mode)    
+    (selected-minor-mode 1)
     (if (not (string-match "go" compile-command))
         (set (make-local-variable 'compile-command)
              "go build -v && go test -v && go vet")))
   (add-hook 'go-mode-hook 'my-go-hook)
-  (use-package gotest :ensure t))
+  (use-package gotest ))
 
 
 (use-package elixir-mode
-  :ensure t
+
   :init
   (defun my-elixir-hook ()
     (subword-mode)
@@ -793,119 +1104,82 @@ Use in `isearch-mode-end-hook'."
   (add-hook 'elixir-mode-hook 'my-elixir-hook))
 
 (use-package elixir-yasnippets
-  :ensure t)
+  )
 
 (use-package alchemist
-  :ensure t
+
   :bind
   ("M-j" . comment-indent-new-line))
 
 (use-package embrace
-  :ensure t)
+  )
 
-(use-package projectile-rails
-  :ensure t
-  :config
-  (projectile-rails-global-mode))
+(use-package bm
+  :bind (("C-. b" . bm-toggle)
+         ("C-. ." . bm-next)
+         ("C-. ," . bm-previous))
+  :commands (bm-repository-load
+             bm-buffer-save
+             bm-buffer-save-all
+             bm-buffer-restore)
+  :init
+  (add-hook' after-init-hook 'bm-repository-load)
+  (add-hook 'find-file-hooks 'bm-buffer-restore)
+  (add-hook 'after-revert-hook #'bm-buffer-restore)
+  (add-hook 'kill-buffer-hook #'bm-buffer-save)
+  (add-hook 'after-save-hook #'bm-buffer-save)
+  (add-hook 'vc-before-checkin-hook #'bm-buffer-save)
+  (add-hook 'kill-emacs-hook #'(lambda nil
+                                 (bm-buffer-save-all)
+                                 (bm-repository-save))))
 
-(use-package helm-ag
-  :ensure t
-  :bind (("s-F" . ag-regexp)))
-
-(use-package helm
-  :ensure t
-  :bind (("C-c h"   . helm-command-prefix)
-         ("C-h a"   . helm-apropos)
-         ("C-x f"   . helm-multi-files)
-         ("C-c C-o"   . helm-occur)
-         ("C-c i" . helm-imenu)
-         ("M-H"     . helm-resume)
-         ("M-x"     . helm-M-x)
-         ("C-x C-m"     . helm-M-x)
-         ("C-x b" . helm-mini)
-         ("C-x C-f" . helm-find-files)
-         ("M-y" . helm-show-kill-ring)
-         )
-
+(use-package projectile
   :preface
-  (defun my-helm-find ()
+  (defun tj-projectile-find-other-file (&optional args)
+    "Find other js file for `ARGS'."
     (interactive)
-    (helm-find nil))
+    (cond
+     ((derived-mode-p `js-mode)
+      (let* ((root (projectile-project-root))
+             (this-file (buffer-file-name))
+             (file-no-prefix (s-chop-prefix root this-file)))
+        (if (s-prefix-p "test" file-no-prefix t)
+            (find-file-other-window (concat root (s-chop-prefix "test" file-no-prefix)))
+          (find-file-other-window (concat (file-name-as-directory (concat root "test")) (s-chop-prefix root this-file))))))
+     ((derived-mode-p 'go-mode)
+      (let* ((this-file (buffer-file-name))
+             (file-no-prefix (s-chop-suffix ".go" this-file)))
+        (if (s-ends-with? "test" file-no-prefix t)
+            (find-file-other-window (concat (s-chop-suffix "_test" file-no-prefix) ".go"))
+          (find-file-other-window (concat file-no-prefix "_test.go")))))
+     (t (apply 'projectile-find-other-file args))))
+
+  (defun tj-projectile-hook ()
+    "Customize projectile how I want it."
+    (define-key projectile-mode-map (kbd "C-c p a") 'tj-projectile-find-other-file)
+    (define-key projectile-mode-map (kbd "C-c p r") 'projectile-replace-regexp))
 
   :config
+  (add-to-list 'projectile-globally-ignored-directories "Godeps/_workspace")
+  ;; (add-to-list 'projectile-globally-ignored-directories "_build")
+  (add-to-list 'projectile-globally-ignored-directories "deps")
+  (add-to-list 'projectile-globally-ignored-directories "node_modules")
 
-  (use-package helm-open-github
-    :ensure t
+  :hook
+  (add-hook 'projectile-mode-hook 'tj-projectile-hook)
 
-    :config
-
-    (define-prefix-command 'tjopen-map)
-    (global-set-key (kbd "C-c o") 'tjopen-map)
-
-    :bind
-
-    (("C-c o o" . prelude-open-with)
-     ("C-c o f" . helm-open-github-from-file)
-     ("C-c o c" . helm-open-github-from-commit)
-     ("C-c o i" . helm-open-github-from-issues)
-     ("C-c o p" . helm-open-github-from-pull-requests)
-     ("C-c u" . browse-url-at-point)
-     ("C-\\" . er/expand-region)
-     ("C->" . mc/mark-all-like-this-dwim)))
-
-  (use-package helm-swoop
-    :ensure t
-
-    :init
-
-    (setq helm-swoop-split-window-function
-      (lambda ($buf)
-        (if helm-swoop-split-with-multiple-windows
-            (funcall helm-swoop-split-right)
-          (when (one-window-p)
-            (funcall helm-swoop-split-direction)))
-        (switch-to-buffer $buf)))
-
-    (setq helm-swoop-split-direction 'split-window-horizontally)
-    (setq helm-buffers-fuzzy-matching t)
-    (setq helm-recentf-fuzzy-match t)
-    (setq helm-imenu-fuzzy-match t)
-    (setq helm-semantic-fuzzy-match t)
-    (setq helm-apropos-fuzzy-match t)
-    (setq helm-M-x-fuzzy-match t)
-    (setq helm-swoop-use-fuzzy-match t)
-    (setq helm-swoop-use-line-number-face t)
-
-    :bind (("M-i" . helm-swoop))
-
-    :config
-
-    (define-key isearch-mode-map (kbd "M-i") 'helm-swoop-from-isearch))
-
-  (use-package helm-mode
-    :diminish helm-mode
-    :init
-    (helm-mode 1))
-
-  (use-package helm-multi-match)
-
-  (helm-autoresize-mode 1)
-
-  (bind-key "<tab>" #'helm-execute-persistent-action helm-map)
-  (bind-key "C-i" #'helm-execute-persistent-action helm-map)
-  (bind-key "C-z" #'helm-select-action helm-map)
-  (bind-key "A-v" #'helm-previous-page helm-map))
+  :bind
+  (("s-t" . projectile-find-file)))
 
 (global-set-key (kbd "C-c c") #'embrace-commander)
 
-(use-package web-beautify
-  :ensure t)
+(use-package web-beautify)
 
 (defadvice compile-goto-error (around my-compile-goto-error activate)
   (let ((display-buffer-overriding-action '(display-buffer-reuse-window (inhibit-same-window . nil))))
     ad-do-it))
 
-(defun tjesformatter ()
+(defun tj-esformatter ()
   (interactive)
   (shell-command (format "esformatter -i %s" (buffer-file-name))))
 
@@ -944,7 +1218,7 @@ Use in `isearch-mode-end-hook'."
   'interactive)
 
 (use-package sql
-  :ensure t
+
 
   :init
 
@@ -1014,11 +1288,640 @@ Version 2015-05-07"
                (replace-match (aref -x 1) 'FIXEDCASE 'LITERAL)))
            -strPairs))))))
 
+
+
+(use-package terraform-mode
+  :config
+  (add-hook 'terraform-mode-hook 'terraform-format-on-save-mode))
+
 ;; nice-jumper. vim-like jumping.
+;; (require 'nice-jumper)
+;; (global-nice-jumper-mode t)
+;; (global-set-key (kbd "C-o") 'nice-jumper/backward)
+;; (global-set-key (kbd "C-i") 'nice-jumper/forward)
 
-(require 'nice-jumper)
-(global-nice-jumper-mode t)
-(global-set-key (kbd "C-o") 'nice-jumper/backward)
-(global-set-key (kbd "C-i") 'nice-jumper/forward)
+(defun tj-counsel-ag ()
+  (interactive)
+  (counsel-ag nil (projectile-project-root)))
 
-(server-start)
+(defun tj-ag-regexp (string)
+  (interactive "sSearch string: ")
+  (ag-regexp string  (projectile-project-root)))
+
+(defun tj-semaphore-open-branch ()
+  "Open branch in Semaphore CI"
+  (interactive)
+  (let* ((branch (magit-get-current-branch))
+         (group-repo (thread-first (magit-get "remote" "origin" "url")
+                       (split-string ":")
+                       last
+                       first
+                       (split-string "\\.")
+                       first)))
+    (browse-url (format "https://semaphoreci.com/%s/branches/%s" group-repo branch))))
+
+(use-package ivy
+  :config
+  (setq ivy-initial-inputs-alist nil)
+  :bind
+  (("M-R" . ivy-resume)))
+
+
+(use-package copy-as-format
+  :bind ("C-. M-w" . copy-as-format)
+  :init
+  (setq copy-as-format-default "github"))
+
+(use-package compile
+  :no-require
+  :bind (("C-c c" . compile)
+         ("M-O"   . show-compilation))
+  :bind (:map compilation-mode-map
+              ("z" . delete-window))
+  :preface
+  (defun show-compilation ()
+    (interactive)
+    (let ((it
+           (catch 'found
+             (dolist (buf (buffer-list))
+               (when (string-match "\\*compilation\\*" (buffer-name buf))
+                 (throw 'found buf))))))
+      (if it
+          (display-buffer it)
+        (call-interactively 'compile))))
+
+  (defun compilation-ansi-color-process-output ()
+    (ansi-color-process-output nil)
+    (set (make-local-variable 'comint-last-output-start)
+         (point-marker)))
+
+  :hook (compilation-filter . compilation-ansi-color-process-output))
+
+(use-package dired-toggle
+  :bind ("C-. d" . dired-toggle)
+  :preface
+  (defun my-dired-toggle-mode-hook ()
+    (interactive)
+    (visual-line-mode 1)
+    (setq-local visual-line-fringe-indicators '(nil right-curly-arrow))
+    (setq-local word-wrap nil))
+  :hook (dired-toggle-mode . my-dired-toggle-mode-hook))
+
+(use-package auto-yasnippet
+  :after yasnippet
+  :bind (("C-c y a" . aya-create)
+         ("C-c y e" . aya-expand)
+         ("C-c y o" . aya-open-line)))
+
+(use-package counsel
+  :after ivy
+  :demand t
+  :diminish
+  :bind
+  (("C-*"     . counsel-org-agenda-headlines)
+   ("C-x C-f" . counsel-find-file)
+   ("C-c e l" . counsel-find-library)
+   ("C-c e q" . counsel-set-variable)
+   ("C-h e l" . counsel-find-library)
+   ("C-h e u" . counsel-unicode-char)
+   ("C-h f"   . counsel-describe-function)
+   ("C-x r b" . counsel-bookmark)
+   ("M-x"     . counsel-M-x)
+   ("C-x C-m"     . counsel-M-x)
+   ("C-. f"     . tj-counsel-ag)
+   ("C-. a"     . tj-ag-regexp)
+   ("C-c i" . counsel-imenu)
+   ("M-y" . counsel-yank-pop)
+   ("C-. j" . counsel-dired-jump)
+   ("C-. n" . counsel-file-jump))
+  :commands counsel-minibuffer-history
+  :init
+  (bind-key "M-r" #'counsel-minibuffer-history minibuffer-local-map)
+  :config
+  (add-to-list 'ivy-sort-matches-functions-alist
+               '(counsel-find-file . ivy--sort-files-by-date)))
+
+(use-package github-browse-file
+  :bind
+  (("C-. g" . github-browse-file)))
+
+(use-package eval-expr
+  :bind ("M-:" . eval-expr)
+  :config
+  (defun eval-expr-minibuffer-setup ()
+    (local-set-key (kbd "<tab>") #'lisp-complete-symbol)
+    (set-syntax-table emacs-lisp-mode-syntax-table)
+    (paredit-mode)))
+
+(use-package selected
+  :diminish selected-minor-mode
+  :bind (:map selected-keymap
+              ("[" . align-code)
+              ("f" . fill-region)
+              ("U" . unfill-region)
+              ("d" . downcase-region)
+              ("u" . upcase-region)
+              ("r" . reverse-region)
+              ("s" . sort-lines))
+  :config
+  (selected-global-mode 1))
+
+(use-package ace-window
+  :bind* ("<C-return>" . ace-window))
+
+(use-package ace-mc
+  :bind (("<C-m> h"   . ace-mc-add-multiple-cursors)
+         ("<C-m> M-h" . ace-mc-add-single-cursor)))
+
+(use-package diminish      :demand t)
+
+(use-package magithub
+  :after magit
+  :config (magithub-feature-autoinject t))
+
+(use-package mc-extras
+  :after multiple-cursors
+  :bind (("<C-m> M-C-f" . mc/mark-next-sexps)
+         ("<C-m> M-C-b" . mc/mark-previous-sexps)
+         ("<C-m> <"     . mc/mark-all-above)
+         ("<C-m> >"     . mc/mark-all-below)
+         ("<C-m> C-d"   . mc/remove-current-cursor)
+         ("<C-m> C-k"   . mc/remove-cursors-at-eol)
+         ("<C-m> M-d"   . mc/remove-duplicated-cursors)
+         ("<C-m> |"     . mc/move-to-column)
+         ("<C-m> ~"     . mc/compare-chars)))
+
+(use-package mc-freeze
+  :after multiple-cursors
+  :bind ("<C-m> f" . mc/freeze-fake-cursors-dwim))
+
+(use-package mc-rect
+  :after multiple-cursors
+  :bind ("C-\"" . mc/rect-rectangle-to-multiple-cursors))
+
+
+(use-package multiple-cursors
+  :defer 5
+  :after selected
+  :preface
+  (defun reactivate-mark ()
+    (interactive)
+    (activate-mark))
+  :bind (("C-'" . set-rectangular-region-anchor)
+         ("<C-m> ^"     . mc/edit-beginnings-of-lines)
+         ("<C-m> `"     . mc/edit-beginnings-of-lines)
+         ("<C-m> $"     . mc/edit-ends-of-lines)
+         ("<C-m> '"     . mc/edit-ends-of-lines)
+         ("<C-m> R"     . mc/reverse-regions)
+         ("<C-m> S"     . mc/sort-regions)
+         ("<C-m> W"     . mc/mark-all-words-like-this)
+         ("<C-m> Y"     . mc/mark-all-symbols-like-this)
+         ("<C-m> a"     . mc/mark-all-like-this-dwim)
+         ("<C-m> c"     . mc/mark-all-dwim)
+         ("<C-m> l"     . mc/insert-letters)
+         ("<C-m> n"     . mc/insert-numbers)
+         ("<C-m> r"     . mc/mark-all-in-region)
+         ("<C-m> /"     . mc/mark-all-in-region-regexp)
+         ("<C-m> t"     . mc/mark-sgml-tag-pair)
+         ("<C-m> w"     . mc/mark-next-like-this-word)
+         ("<C-m> x"     . mc/mark-more-like-this-extended)
+         ("<C-m> y"     . mc/mark-next-like-this-symbol)
+         ("<C-m> C-x"   . reactivate-mark)
+         ("<C-m> C-SPC" . mc/mark-pop)
+         ("<C-m> ("     . mc/mark-all-symbols-like-this-in-defun)
+         ("<C-m> C-("   . mc/mark-all-words-like-this-in-defun)
+         ("<C-m> M-("   . mc/mark-all-like-this-in-defun)
+         ("<C-m> ["     . mc/vertical-align-with-space)
+         ("<C-m> {"     . mc/vertical-align)
+
+         ("S-<down-mouse-1>")
+         ("S-<mouse-1>" . mc/add-cursor-on-click))
+
+  :bind (:map selected-keymap
+              ("C-'" . mc/edit-lines)
+              ("c"   . mc/edit-lines)
+              ("."   . mc/mark-next-like-this)
+              ("<"   . mc/unmark-next-like-this)
+              ("C->" . mc/skip-to-next-like-this)
+              (","   . mc/mark-previous-like-this)
+              (">"   . mc/unmark-previous-like-this)
+              ("C-<" . mc/skip-to-previous-like-this)
+              ("y"   . mc/mark-next-symbol-like-this)
+              ("Y"   . mc/mark-previous-symbol-like-this)
+              ("w"   . mc/mark-next-word-like-this)
+              ("W"   . mc/mark-previous-word-like-this)))
+
+(use-package ace-jump-mode
+  :defer t)
+
+(use-package ace-link
+  :defer 10
+  :config
+  (ace-link-setup-default)
+
+  (add-hook 'org-mode-hook
+            #'(lambda () (bind-key "C-c C-o" #'ace-link-org org-mode-map)))
+  (add-hook 'gnus-summary-mode-hook
+            #'(lambda () (bind-key "M-o" #'ace-link-gnus gnus-summary-mode-map)))
+  (add-hook 'gnus-article-mode-hook
+            #'(lambda () (bind-key "M-o" #'ace-link-gnus gnus-article-mode-map)))
+  (add-hook 'ert-results-mode-hook
+            #'(lambda () (bind-key "o" #'ace-link-help ert-results-mode-map)))
+
+  (bind-key "C-c M-o" 'ace-link-addr))
+
+(use-package ace-mc
+  :bind (("<C-m> h"   . ace-mc-add-multiple-cursors)
+         ("<C-m> M-h" . ace-mc-add-single-cursor)))
+
+(defun orgtbl-to-md (start end)
+  "Convert an org-mode table into markdown format"
+  (interactive "r")
+  (save-excursion
+    (save-restriction
+      (narrow-to-region start end)
+      (goto-char (point-min))
+      ;; Locate divider row
+      (re-search-forward "^\\s-*|-[-+]*|?\\s-*$")
+      ;; Start by replacing the +es
+      (subst-char-in-region (match-beginning 0) (match-end 0) ?+ ?|)
+      ;; Locate column alignment row (fixme: code below expects this to be next line)
+      (re-search-forward "^\\s-*\\(|\\s-*<[lcr]>\\s-*\\)*|?\\s-*$")
+      ;; For each tag, adjust the entry above it
+      (beginning-of-line)
+      (while (re-search-forward "<[lcr]>" (line-end-position) t)
+	(pcase (char-before (1- (point)))
+	  (?r (let ((cc (current-column)))
+		(forward-line -1)
+		(move-to-column cc)
+		(skip-chars-forward "-")
+		(subst-char-in-region (1- (point)) (point) ?- ?:)
+		(forward-line)
+		(move-to-column cc)))
+	  (?l (let ((cc (current-column)))
+		(forward-line -1)
+		(move-to-column cc)
+		(skip-chars-backward "-")
+		(subst-char-in-region (point) (1+ (point)) ?- ?:)
+		(forward-line)
+		(move-to-column cc)))
+	  (?c (let ((cc (current-column)))
+		(forward-line -1)
+		(move-to-column cc)
+		(skip-chars-backward "-")
+		(subst-char-in-region (point) (1+ (point)) ?- ?:)
+		(skip-chars-forward "-:")
+		(subst-char-in-region (1- (point)) (point) ?- ?:)
+		(forward-line)
+		(move-to-column cc)))
+	  )
+	)
+      ;; Remove the alignment tag line
+      (delete-region (line-beginning-position) (line-beginning-position 2))
+      )))
+
+(defun md-to-orgtbl (start end)
+  "Convert a markdown table into org-mode format"
+  (interactive "r")
+  (save-excursion
+    (save-restriction
+      (narrow-to-region start end)
+      (goto-char (point-min))
+      (search-forward-regexp "^\\s-*\\(|:?-+:?\\)*|?\\s-*$")
+      (let (p1 p2 myLine)
+	(setq p1 (line-beginning-position) )
+	(setq p2 (line-end-position) )
+	(setq myLine (buffer-substring-no-properties p1 p2))
+
+	(subst-char-in-region p1 p2 ?: ?-)
+	(insert "\n")
+	(insert (replace-regexp-in-string "-+" ""
+          (replace-regexp-in-string "-+:" "<r>"
+	  (replace-regexp-in-string ":-+" "<l>"
+	  (replace-regexp-in-string ":-+:" "<c>"
+           myLine)))))
+      ))))
+
+(defun orgtbl-to-gfm (table params)
+  "Convert the Orgtbl mode TABLE to GitHub Flavored Markdown."
+  (let* ((alignment (mapconcat (lambda (x) (if x "|--:" "|---"))
+                               org-table-last-alignment ""))
+         (params2
+          (list
+           :splice t
+           :hline (concat alignment "|")
+           :lstart "| " :lend " |" :sep " | ")))
+    (orgtbl-to-generic table (org-combine-plists params2 params))))
+
+(defun orgtbl-to-gfm (table params)
+  "Convert the Orgtbl mode TABLE to GitHub Flavored Markdown."
+  (let* ((alignment (mapconcat (lambda (x) (if x "|--:" "|---"))
+                               org-table-last-alignment ""))
+         (params2
+          (list
+           :splice t
+           :hline (concat alignment "|")
+           :lstart "| " :lend " |" :sep " | ")))
+    (orgtbl-to-generic table (org-combine-plists params2 params))))
+
+(defun tj-insert-org-to-md-table (table-name)
+  (interactive "*sEnter table name: ")
+  (insert "<!---
+#+ORGTBL: SEND " table-name " orgtbl-to-gfm
+
+-->
+<!--- BEGIN RECEIVE ORGTBL " table-name " -->
+<!--- END RECEIVE ORGTBL " table-name " -->")
+  (previous-line)
+  (previous-line)
+  (previous-line))
+
+(defun tj-generalized-shell-command (command arg)
+  "Unifies `shell-command' and `shell-command-on-region'. If no region is
+selected, run a shell command just like M-x shell-command (M-!).  If
+no region is selected and an argument is a passed, run a shell command
+and place its output after the mark as in C-u M-x `shell-command' (C-u
+M-!).  If a region is selected pass the text of that region to the
+shell and replace the text in that region with the output of the shell
+command as in C-u M-x `shell-command-on-region' (C-u M-|). If a region
+is selected AND an argument is passed (via C-u) send output to another
+buffer instead of replacing the text in region."
+  (interactive (list (read-from-minibuffer "Shell command: " nil nil nil 'shell-command-history)
+                     current-prefix-arg))
+  (let ((p (if mark-active (region-beginning) 0))
+        (m (if mark-active (region-end) 0)))
+    (if (= p m)
+        ;; No active region
+        (if (eq arg nil)
+            (shell-command command)
+          (shell-command command t))
+      ;; Active region
+      (if (eq arg nil)
+          (shell-command-on-region p m command t t)
+        (shell-command-on-region p m command)))))
+
+(defun tj-comment-eclipse ()
+  (interactive)
+  (let ((start (line-beginning-position))
+        (end (line-end-position)))
+    (when (or (not transient-mark-mode) (region-active-p))
+      (setq start (save-excursion
+                    (goto-char (region-beginning))
+                    (beginning-of-line)
+                    (point))
+            end (save-excursion
+                  (goto-char (region-end))
+                  (end-of-line)
+                  (point))))
+    (comment-or-uncomment-region start end)))
+(global-set-key (kbd "M-;") 'tj-comment-eclipse)
+
+(defun isearch-initial-string nil)
+
+(defun isearch-set-initial-string ()
+  (remove-hook 'isearch-mode-hook 'isearch-set-initial-string)
+  (setq isearch-string isearch-initial-string)
+  (isearch-search-and-update))
+
+(defun isearch-foward-at-point (&optional regexp-p no-recursive-edit)
+  (interactive)
+  (if regexp-p (isearch-forward regexp-p no-recursive-edit)
+    (let* ((end (progn (skip-syntax-foward "w_") (point)))
+           (begin (progn (skip-syntax-backward "w_") (point))))
+      (if (eq begin end)
+          (isearch-forward regexp-p no-recursive-edit)
+        (setq isearch-initial-string (buffer-substring begin end))
+        (add-hook 'isearch-mode-hook 'isearch-set-initial-string)
+        (isearch-forward regexp-p no-recursive-edit)))))
+
+(defun tj-newline-and-indent-up ()
+  (interactive)
+  (line-move -1)
+  (end-of-line)
+  (newline-and-indent))
+
+(defun tj-find-config ()
+  "Find a personal config file to edit."
+  (interactive)
+  (find-file "~/.emacs.d/personal/config.el"))
+
+(defun tj-only-buffer ()
+  (interactive)
+  (mapc 'kill-buffer (cdr (buffer-list (current-buffer)))))
+
+(defun tj-toggle-window-split ()
+  (interactive)
+  (if (= (count-windows) 2)
+      (let* ((this-win-buffer (window-buffer))
+             (next-win-buffer (window-buffer (next-window)))
+             (this-win-edges (window-edges (selected-window)))
+             (next-win-edges (window-edges (next-window)))
+             (this-win-2nd (not (and (<= (car this-win-edges)
+                                         (car next-win-edges))
+                                     (<= (cadr this-win-edges)
+                                         (cadr next-win-edges)))))
+             (splitter
+              (if (= (car this-win-edges)
+                     (car (window-edges (next-window))))
+                  'split-window-horizontally
+                'split-window-vertically)))
+        (delete-other-windows)
+        (let ((first-win (selected-window)))
+          (funcall splitter)
+          (if this-win-2nd (other-window 1))
+          (set-window-buffer (selected-window) this-win-buffer)
+          (set-window-buffer (next-window) next-win-buffer)
+          (select-window first-win)
+          (if this-win-2nd (other-window 1))))))
+
+(defun tj-kill-line-save (&optional arg)
+  (interactive "p")
+  (save-excursion
+    (copy-region-as-kill
+     (point)
+     (progn (if arg (forward-visible-line arg)
+              (end-of-visible-line))
+            (point)))))
+(global-set-key (kbd "C-c C-k") 'tj-kill-line-save)
+
+(defun tj-eshell (name)
+  (interactive "sName: ")
+  (let ((eshell-buffer-name (format "*eshell: %s*" name)))
+    (if (get-buffer eshell-buffer-name)
+        (switch-to-buffer-other-window eshell-buffer-name)
+      (eshell eshell-buffer-name))))
+
+(defun tj-eshell-execute-previous-input ()
+  (interactive)
+  (save-excursion
+    (switch-to-buffer-other-window eshell-buffer-name)
+    (call-interactively 'eshell-previous-matching-input-from-input)
+    (eshell-send-input)))
+
+(defun tj-goto (repo)
+  "Go to or clone the given dev `repo'."
+  (interactive
+   (list
+    (ido-read-directory-name "Directory: " "~/dev/")))
+  (let* ((dev-dir "~/dev/")
+         (repo-dir repo))
+    (if (file-exists-p repo-dir)
+        (projectile-find-file-in-directory repo)
+      (shell-command (format "cd %s; git clone git@github.com:travisjeffery/%s.git" dev-dir repo))
+      (projectile-find-file-in-directory repo))))
+
+(require 'f)
+(require 'eshell)
+
+(defun eshell/goto (&optional repo)
+  "cd to `repo', cloning if necessary."
+  (interactive)
+  (let ((segment-path (concat "~/dev/segmentio/" repo))
+        (dev-path (concat "~/dev/" repo)))
+    (if (file-exists-p segment-path)
+        (eshell/cd segment-path)
+      (if (file-exists-p dev-path)
+          (eshell/cd dev-path)))))
+
+(defun eshell/clear ()
+  "Clear eshell's buffer.'"
+  (interactive)
+  (let ((inhibit-read-only t))
+    (erase-buffer)))
+
+(defun bundler--installed? ()
+  "`t' if the bundle is available in the working directory."
+  (equal (call-process-shell-command "which bundle > /dev/null 2>&1") 0))
+
+(defun bundler--in-bundled-project? ()
+  "`t' if the project is bundled."
+  (f-traverse-upwards
+   (lambda (path)
+     (f-exists? (f-join path "Gemfile")))
+   default-directory))
+
+(defun eshell-execute-current-line ()
+  "Insert current line at the end of the buffer."
+  (interactive)
+  (let ((command (buffer-substring
+                  (save-excursion
+                    (beginning-of-line)
+                    (point))
+                  (save-excursion
+                    (end-of-line)
+                    (point)))))
+    (eshell--execute-command command t)))
+
+(defun eshell-insert-command (text &optional func)
+  "Insert a command at the end of the buffer."
+  (interactive)
+  (goto-char eshell-last-output-end)
+  (insert-and-inherit text)
+  (funcall (or func 'eshell-send-input)))
+
+(defun eshell--execute-command (command save-excursion?)
+  (let ((body #'(lambda nil
+                  (eshell-insert-command command))))
+    (if save-excursion?
+        (save-excursion
+          (funcall body))
+      (funcall body))))
+
+(defun eshell/run-with-bundler (&rest args)
+  "Run the `ARGS' with bundler when in a bundled project."
+  (let ((cmd (eshell-flatten-and-stringify args)))
+    (if (and (bundler--installed?) (bundler--in-bundled-project?))
+        (eshell--execute-command (format "bundle exec %s" cmd) nil)
+      (eshell--execute-command cmd nil))))
+
+(defun get-previous-indentation ()
+  "Get the column of the previous indented line"
+  (interactive)
+  (save-excursion
+    (progn
+      (move-beginning-of-line nil)
+	  (skip-chars-backward "\n \t")
+      (back-to-indentation))
+    (current-column)))
+
+(defun get-current-indentation ()
+  "Return column at current indentation"
+  (interactive)
+  (save-excursion
+    (progn
+      (back-to-indentation)
+      (current-column))))
+
+(defun point-at-current-indentation ()
+  "Return point at current indentation"
+  (interactive)
+  (save-excursion
+    (progn
+	  (move-to-column (get-current-indentation))
+      (point))))
+
+(defun point-at-column-on-line (col)
+  "Returns the point at `col` on the current line"
+  (interactive)
+  (save-excursion
+    (progn
+      (move-to-column col)
+      (point))))
+
+(defun ig-move-line-to-column (col)
+  "Move the line to col; fill with all spaces if moveing forward"
+ (interactive "p")
+  (let ((point-at-cur-indent (point-at-current-indentation))
+		(col-at-cur-indent (get-current-indentation)))
+    (cond (
+		   (= col 0)
+		   ;; delete to beginning of line or do nothing
+		   (if (= col-at-cur-indent 0)
+			   nil
+			 (delete-region point-at-cur-indent (point-at-column-on-line 0))))
+		  (
+			  (< col col-at-cur-indent)
+			  ;; delete from our current point BACK to col
+			  (delete-region (point-at-column-on-line col) point-at-cur-indent))
+		  (
+		   (> col col-at-cur-indent)
+		   ;; delete all text from indent to beginning of line
+		   (progn
+			 (delete-region point-at-cur-indent (point-at-column-on-line 0))
+			 (move-beginning-of-line nil)
+			 ;; add spaces forward
+			 (insert-string (make-string col ?\s)))))))
+
+(defun ig-indent-sql ()
+  "Indent by `tab-width` at most 1 time greater than the previously indented line otherwise go to the beginning of the line indent forward by `tab-width`"
+  (let ((previous (get-previous-indentation))
+        (current (get-current-indentation)))
+    (cond ( ;; exactly at previous line's indentation
+           (= previous current)
+		   (ig-move-line-to-column (+ current tab-width)))
+
+	  ( ;; current is greater than previous
+	   (> current previous)
+	    ;; exactly at one indentation forward from previous lines indent
+	   (if (= tab-width (- current previous))
+		;; move line to beginning
+	       (ig-move-line-to-column 0)
+	     ;; go back to previous indentation level
+	     (ig-move-line-to-column previous)))
+
+          (t
+	   (ig-move-line-to-column (+ current tab-width))))))
+
+
+(add-hook 'sql-mode-hook
+          (function (lambda ()
+                      (make-local-variable 'indent-line-function)
+                      (setq indent-line-function 'ig-indent-sql))))
+
+
+(global-set-key (kbd "C-RET") 'other-window)
+(global-set-key (kbd "C-z") 'delete-other-windows)
+
+(use-package server
+  :no-require
+  :hook (after-init . server-start))
