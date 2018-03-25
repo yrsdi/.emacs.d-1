@@ -28,3 +28,8 @@ network-security.data
 magithub
 ac-comphist.dat
 .mc-lists.el
+prelude-cheatsheet.el
+prelude-cheatsheet.aux
+prelude-cheatsheet.log
+undohist
+emojis
