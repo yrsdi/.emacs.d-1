@@ -1,12 +1,18 @@
 (require 'use-package)
 
 (setq flycheck-check-syntax-automatically '(save mode-enabled))
-(setq-default tab-width 2)
+(setq-default tab-width 8)
 (setq multi-term-program "/usr/local/bin/zsh")
 (setq explicit-shell-file-name "/usr/local/bin/zsh")
 (setq ring-bell-function 'ignore)
 (setq scroll-margin 10)
 (setq display-line-numbers nil)
+(setq auto-window-vscroll nil)
+(global-undo-tree-mode 0)
+(set-frame-font (font-spec :family "Operator Mono" :size 14 :weight 'normal))
+(add-to-list 'default-frame-alist '(font . "Operator Mono-14"))
+(global-hl-line-mode -1)
+(setq vc-handled-backends nil)
 
 ;;; Settings
 
@@ -17,7 +23,9 @@
   :config (menu-bar-mode -1))
 
 (use-package misc
-  :bind ("M-z" . 'zap-up-to-char))
+  :bind
+  (("M-z" . 'zap-up-to-char)
+   ("s-M-z" . 'zap-to-char)))
 
 (defun tj-newline-and-indent ()
   (interactive)
@@ -29,15 +37,41 @@
   (interactive)
   (dired-smart-shell-command "open -a iTerm $PWD" nil nil))
 
+(use-package wgrep)
+
+(use-package wgrep-ag
+  :config (autoload 'wgrep-ag-setup "wgrep-ag")
+  :hook (ag-mode-hook . wgrep-ag-setup))
+
+(use-package protobuf-mode
+  :mode "\\.proto\\'"
+  :commands (protobuf-mode)
+  :hook (protobuf-mode
+         . (lambda ()
+             (subword-mode)
+             (electric-pair-mode)
+             (c-add-style "my-protobuf-style" my-protobuf-style t)))
+  :config
+  (progn
+    (defconst my-protobuf-style
+      '((c-basic-offset . 2)
+        (indent-tabs-mode . nil)))))
+
+;; (use-package protobuf-mode
+;;   :hook
+;;   (protobuf-mode-hook . subword-mode))
+
 (use-package diff-mode
+  :commands diff-mode
   :hook
-  (font-lock-mode))
+  (diff-mode-hook . font-lock-mode))
 
 (use-package minibuffer
   :config
   (defun my-minibuffer-setup-hook ()
     (smartparens-mode -1)
     (electric-pair-mode -1)
+    (subword-mode)
     (setq gc-cons-threshold most-positive-fixnum))
 
   (defun my-minibuffer-exit-hook ()
@@ -62,7 +96,7 @@
 (use-package smartparens
   :bind (:map smartparens-mode-map
               ("M-k" . sp-raise-sexp)
-             ("M-I" . sp-splice-sexp))
+              ("M-I" . sp-splice-sexp))
   :hook (smartparens-mode
          . (lambda ()
              (unbind-key "M-s" smartparens-mode-map))))
@@ -70,15 +104,6 @@
 (defadvice split-window (after move-point-to-new-window activate)
   "Moves the point to the newly created window after splitting."
   (other-window 1))
-
-
-
-(set-frame-font (font-spec :family "Operator Mono" :size 14 :weight 'normal))
-(add-to-list 'default-frame-alist '(font . "Operator Mono-14"))
-
-(global-hl-line-mode -1)
-
-(setq vc-handled-backends nil)
 
 (add-hook 'isearch-mode-end-hook #'endless/goto-match-beginning)
 
@@ -180,8 +205,14 @@ Use in `isearch-mode-end-hook'."
 
 (use-package company
   :init
-  (setq company-dabbrev-code-modes t
-        company-dabbrev-code-everywhere t)
+  ;; (setq company-dabbrev-code-modes t)
+
+  ;; (setq company-dabbrev-char-regexp "\\(\\sw\\|\\s_\\|_\\|-\\)")
+  (setq company-ddabbrev-code-everywhere t)
+  (setq company-dabbrev-code-modes t)
+  (setq company-dabbrev-code-other-buffers 'all)
+  (setq company-dabbrev-ignore-buffers "\\`\\'")
+
   (setq company-idle-delay 0.1)
   (setq company-echo-delay 0)
   (setq company-tooltip-align-annotations t)
@@ -191,6 +222,7 @@ Use in `isearch-mode-end-hook'."
   (setq company-abort-manual-when-too-short 5)
   (setq company-dabbrev-downcase nil)
   (setq company-dabbrev-ignore-case t)
+  (setq company-dabbrev-other-buffers 'all)
   :bind
   ("TAB" . company-indent-or-complete-common)
   :config
@@ -202,10 +234,9 @@ Use in `isearch-mode-end-hook'."
       ad-do-it)))
 
 (use-package company-elisp
-             :after company
-             :config
-             (push 'company-elisp company-backends))
-
+  :after company
+  :config
+  (push 'company-elisp company-backends))
 (setq-local company-backend '(company-elisp))
 
 (defun dired-back-to-top ()
@@ -225,11 +256,13 @@ Use in `isearch-mode-end-hook'."
   (vector 'remap 'end-of-buffer) 'dired-jump-to-bottom)
 
 (use-package highlight-symbol
-  :init
-  (add-hook 'go-mode-hook 'highlight-symbol-mode)
+  :ensure t
   :config
+  (highlight-symbol-mode)
   (global-set-key (kbd "M-p") 'highlight-symbol-prev)
   (global-set-key (kbd "M-n") 'highlight-symbol-next))
+
+(setq sql-indent-offset 2)
 
 (use-package diff-hl
   :commands (diff-hl-mode diff-hl-dired-mode)
@@ -238,16 +271,15 @@ Use in `isearch-mode-end-hook'."
 (use-package diff-hl-flydiff
   :commands diff-hl-flydiff-mode)
 
-(use-package diff-mode
-  :commands diff-mode)
-
 (use-package diffview
   :commands (diffview-current diffview-region diffview-message))
+
+(use-package f)
 
 (use-package dired
   :bind
   (("C-c J" . dired-double-jump)
-  ("C-x d" . dired-jump))
+   ("C-x d" . dired-jump))
   :bind (:map dired-mode-map
               ("z"     . delete-window)
               ("e"     . ora-ediff-files)
@@ -399,6 +431,10 @@ Use in `isearch-mode-end-hook'."
                "\\)")))
         (funcall dired-omit-regexp-orig)))))
 
+(use-package dired-narrow
+  :bind (:map dired-mode-map
+              ("/" . dired-narrow)))
+
 (use-package dired-ranger
   :bind (:map dired-mode-map
               ("W" . dired-ranger-copy)
@@ -409,7 +445,7 @@ Use in `isearch-mode-end-hook'."
   :disabled t
   :defer 5
   :commands global-discover-mode
-  :hook (dired-mode-hook . dired-turn-on-discover)
+  :hook (dired-mode . dired-turn-on-discover)
   :config
   (global-discover-mode 1))
 
@@ -518,6 +554,7 @@ Use in `isearch-mode-end-hook'."
      (define-key prelude-mode-map (kbd "C-c o") nil)
      (define-key prelude-mode-map (kbd "C-c C-i") nil)
      (define-key prelude-mode-map (kbd "C-c g") nil)
+     (define-key prelude-mode-map (kbd "C-c t") nil)
      (define-key prelude-mode-map (kbd "C-c i") nil)))
 
 (defun tj-comment-line ()
@@ -600,8 +637,16 @@ Use in `isearch-mode-end-hook'."
      #'tj-visit-pull-request-url))
 
 (use-package undo-tree
+  ;; jww (2017-12-10): This package often breaks the ability to "undo in
+  ;; region". Also, its backup files often get corrupted, so this sub-feature
+  ;; is disabled in settings.el.
+  :demand t
+  :bind ("M-_" . undo-tree-redo)
   :config
-  (setq undo-tree-enable-undo-in-region nil))
+  (setq undo-tree-history-directory-alist (quote ((".*" . "~/.cache/emacs/backups"))))
+  (setq undo-tree-mode-lighter "")
+  (setq undo-tree-visualizer-timestamps t)
+  (global-undo-tree-mode))
 
 (use-package color-moccur
   :commands (isearch-moccur isearch-all isearch-moccur-all)
@@ -613,11 +658,9 @@ Use in `isearch-mode-end-hook'."
 (use-package moccur-edit
   :after color-moccur)
 
-
-
 (use-package eshell
   :commands (eshell eshell-command)
-    :preface
+  :preface
   (defvar eshell-isearch-map
     (let ((map (copy-keymap isearch-mode-map)))
       (define-key map [(control ?m)] 'eshell-isearch-return)
@@ -658,14 +701,12 @@ Use in `isearch-mode-end-hook'."
   (setq eshell-smart-space-goes-to-end t)
 
   (defun tj-eshell-mode-hook ()
+    (smartparens-mode)
+    (show-smartparens-mode)
     (setenv "PATH" (concat "/usr/local/go/bin:" "/usr/local/bin:" (getenv "PATH")))
     (setq eshell-path-env (concat "/usr/local/bin:" eshell-path-env)))
 
-  (add-hook 'eshell-mode-hook 'tj-eshell-mode-hook)
-
-  (use-package multi-eshell
-    :init
-    (setq multi-eshell-shell-function '(eshell))))
+  (add-hook 'eshell-mode-hook 'tj-eshell-mode-hook))
 
 (use-package eshell-bookmark
   :hook (eshell-mode . eshell-bookmark-setup))
@@ -682,10 +723,22 @@ Use in `isearch-mode-end-hook'."
   :commands (fancy-narrow-to-region fancy-widen))
 
 (use-package magit
-
   :init
   (setq magit-push-always-verify nil)
+
   :config
+
+  (setq magit-popup-use-prefix-argument 'default)
+
+  (plist-put magit-commit-popup :use-prefix 'popup)
+  (plist-put magit-log-popup :use-prefix 'popup)
+  (plist-put magit-push-popup :use-prefix 'popup)
+  (plist-put magit-push-popup :default-action 'magit-push-current-to-upstream)
+  (plist-put magit-pull-popup :use-prefix 'popup)
+  (plist-put magit-pull-popup :default-action 'magit-pull-from-upstream)
+  (plist-put magithub-dispatch-popup :use-prefix 'popup)
+  (plist-put magithub-dispatch-popup :default-action 'magithub-pull-request-new)
+
   (global-unset-key [tab]))
 
 (use-package dockerfile-mode
@@ -694,10 +747,7 @@ Use in `isearch-mode-end-hook'."
 (use-package edit-indirect
   :bind (("C-c '" . edit-indirect-region)))
 
-(use-package hcl-mode
-  )
-
-(use-package magit)
+(use-package hcl-mode)
 
 (use-package ag)
 
@@ -757,7 +807,7 @@ Use in `isearch-mode-end-hook'."
   :commands gitpatch-mail)
 
 (use-package google-this
-  :bind ("C-. /" . google-this-search))
+  :bind ("C-c /" . google-this-search))
 
 (use-package goto-last-change
   :bind ("C-x C-/" . goto-last-change))
@@ -1017,18 +1067,7 @@ Use in `isearch-mode-end-hook'."
   :defer t
   :init (add-hook 'global-company-mode-hook #'company-quickhelp-mode))
 
-(use-package company-jedi)
-
-(use-package python-mode
-
-  :config
-  (add-to-list 'company-backends 'company-jedi)
-  (add-hook 'python-mode-hook 'jedi:setup)
-  (setq jedi:complete-on-dot t)
-
-  :bind
-  ("M-." . jedi:goto-definition))
-
+(use-package python-mode)
 
 (eval-after-load 'company
   '(define-key company-active-map (kbd "M-h") #'company-quickhelp-manual-begin))
@@ -1036,83 +1075,88 @@ Use in `isearch-mode-end-hook'."
 (use-package neotree )
 
 (use-package company-go
-
   :defer t
-  :init
-  (with-eval-after-load 'company
-    (add-to-list 'company-backends 'company-go)))
+  :config
+  (set (make-local-variable 'company-backends)
+       '((company-dabbrev-code company-go))))
 
 (use-package go-eldoc
-
   :defer t
   :init
   (add-hook 'go-mode-hook 'go-eldoc-setup))
 
 (use-package go-mode
   :defer t
-
   :init
-
   (load "~/dev/src/github.com/stapelberg/expanderr/expanderr.el")
-
+  (setq go-test-verbose t)
   (setq gofmt-command "goimports")
   (setenv "GOPATH" (expand-file-name (concat (getenv "HOME") "/dev")))
   (setq company-go-show-annotation t)
   (add-hook 'go-mode-hook #'go-guru-hl-identifier-mode)
-
   (eval-after-load "go-mode"
     '(progn
-       (define-key go-mode-map (kbd "C-c C-a") nil)
-       ))
-
+       (define-key go-mode-map (kbd "C-c C-a") nil)))
   :bind
-
   ("C-c C-d" . go-guru-describe)
   ("C-c C-i" . goimports)
   ("C-c C-r" . godoctor-rename)
   ("C-c C-c" . godoc-at-point)
   ("C-c C-t" . go-test-current-file)
-  ("C-c C-p" . go-playground)
   ("C-c g" . godoc)
   ("M-j" . comment-indent-new-line)
   ("M-." . go-guru-definition)
+  ("C-c <C-m>" . tj-go-kill-doc)
+  ("C-. G" . tj-go-find-file)
 
   :config
+  (setq tab-width 8)
 
+  (setq-local compilation-read-command nil)
+
+  (defun tj-go-find-file ()
+    "Find file under $GOROOT."
+    (interactive)
+    (counsel-find-file "/usr/local/go/src/"))
+
+  (use-package go-errcheck
+    :config
+    (defun tj-go-errcheck ()
+      (interactive)
+      (let ((default-directory (projectile-project-root)))
+        (go-errcheck nil nil nil))))
   (add-hook 'before-save-hook 'gofmt-before-save)
-  ;; (add-to-list (make-local-variable 'company-backends) 'company-go)
+
+  (defun tj-go-kill-doc ()
+    "Kill the doc for the thing at point."
+    (interactive)
+    (let ((funcinfo (go-eldoc--get-funcinfo)))
+      (if funcinfo
+          (go-eldoc--format-signature funcinfo)
+        (let ((bounds (go-eldoc--bounds-of-go-symbol)))
+          (when bounds
+            (let ((curinfo (go-eldoc--get-cursor-info bounds)))
+              (when curinfo
+                (kill-new (format "%s" curinfo))
+                (message (format "killed: %s" curinfo)))))))))
+
   (defun my-go-hook ()
     (setq display-line-numbers nil)
+    (highlight-symbol-mode)
     (subword-mode)
     (flycheck-mode)
-    (electric-indent-mode)    
+    (electric-indent-mode)
     (selected-minor-mode 1)
     (if (not (string-match "go" compile-command))
         (set (make-local-variable 'compile-command)
              "go build -v && go test -v && go vet")))
   (add-hook 'go-mode-hook 'my-go-hook)
-  (use-package gotest ))
+  (use-package gotest))
 
+(use-package go-gen-test
+  :after go-mode)
 
-(use-package elixir-mode
-
-  :init
-  (defun my-elixir-hook ()
-    (subword-mode)
-    (flycheck-mode)
-    (alchemist-mode))
-  (add-hook 'elixir-mode-hook 'my-elixir-hook))
-
-(use-package elixir-yasnippets
-  )
-
-(use-package alchemist
-
-  :bind
-  ("M-j" . comment-indent-new-line))
-
-(use-package embrace
-  )
+(use-package embrace)
 
 (use-package bm
   :bind (("C-. b" . bm-toggle)
@@ -1132,7 +1176,6 @@ Use in `isearch-mode-end-hook'."
   (add-hook 'kill-emacs-hook #'(lambda nil
                                  (bm-buffer-save-all)
                                  (bm-repository-save))))
-
 (use-package projectile
   :preface
   (defun tj-projectile-find-other-file (&optional args)
@@ -1165,13 +1208,28 @@ Use in `isearch-mode-end-hook'."
   (add-to-list 'projectile-globally-ignored-directories "deps")
   (add-to-list 'projectile-globally-ignored-directories "node_modules")
 
+  (eval-after-load "projectile"
+    '(progn (setq magit-repo-dirs (mapcar (lambda (dir)
+                                            (substring dir 0 -1))
+                                          (remove-if-not (lambda (project)
+                                                           (file-directory-p (concat project "/.git/")))
+                                                         (projectile-relevant-known-projects))))
+            (setq magit-repo-dirs-depth 1)))
+
   :hook
   (add-hook 'projectile-mode-hook 'tj-projectile-hook)
 
   :bind
-  (("s-t" . projectile-find-file)))
+  (("s-t" . projectile-find-file)
+   ("C-c t" . projectile-toggle-between-implementation-and-test)
+   ("C-c C-p" . projectile-test-project)
+   ("C-c P" . projectile-switch-project)))
 
 (global-set-key (kbd "C-c c") #'embrace-commander)
+
+;; unset text scaling key bindings, use 'text-scale-adjust instead
+(global-unset-key (kbd "C--"))
+(global-unset-key (kbd "C-+"))
 
 (use-package web-beautify)
 
@@ -1380,6 +1438,7 @@ Version 2015-05-07"
   :bind
   (("C-*"     . counsel-org-agenda-headlines)
    ("C-x C-f" . counsel-find-file)
+   ("C-x C-g" . find-file-go)
    ("C-c e l" . counsel-find-library)
    ("C-c e q" . counsel-set-variable)
    ("C-h e l" . counsel-find-library)
@@ -1398,6 +1457,31 @@ Version 2015-05-07"
   :init
   (bind-key "M-r" #'counsel-minibuffer-history minibuffer-local-map)
   :config
+
+  (defun find-file-go (arg)
+    (interactive "P")
+    (let*
+        ((pkg (or
+               (and arg (read-string "PKG: "))
+               (thing-at-point 'filename)))
+         (dir (f-join (getenv "GOPATH") "src" pkg)))
+      (projectile-find-file-in-directory dir)))
+
+  (defun ag-go (arg)
+    (interactive "P")
+    (let*
+        ((pkg (or
+               (and arg (read-string "PKG: "))
+               (thing-at-point 'filename)))
+         (dir (f-join (getenv "GOPATH") "src" pkg))
+         (search (read-string "Search string: ")))
+      (ag search dir)))
+
+  ;; (defun projectile-go-pkg (pkg)
+  ;;   (interactive "sPKG: ")
+  ;;   (let ((dir (f-join (getenv "GOPATH") "src" pkg)))
+  ;;     (projectile-find-file-in-directory dir)))
+
   (add-to-list 'ivy-sort-matches-functions-alist
                '(counsel-find-file . ivy--sort-files-by-date)))
 
@@ -1437,7 +1521,13 @@ Version 2015-05-07"
 
 (use-package magithub
   :after magit
-  :config (magithub-feature-autoinject t))
+  :config
+  (magithub-feature-autoinject t)
+
+  ;; (dolist
+  ;;     (item magithub-confirmation)
+  ;;   (magithub-confirm-set-default-behavior (car item) 'allow t))
+  )
 
 (use-package mc-extras
   :after multiple-cursors
@@ -1458,7 +1548,6 @@ Version 2015-05-07"
 (use-package mc-rect
   :after multiple-cursors
   :bind ("C-\"" . mc/rect-rectangle-to-multiple-cursors))
-
 
 (use-package multiple-cursors
   :defer 5
@@ -1513,6 +1602,54 @@ Version 2015-05-07"
 
 (use-package ace-jump-mode
   :defer t)
+
+(use-package browse-url
+  :bind
+  (("C-x x" . browse-url-at-point)))
+
+(use-package deft
+  :commands deft
+  :bind
+  (("C-x D" . deft))
+  :config
+  (setq deft-directory "~/Dropbox/org")
+  (setq deft-extensions '("org" "md"))
+  (setq deft-default-extension "org")
+  (setq deft-text-mode 'org-mode)
+  (setq deft-use-filename-as-title t)
+  (setq deft-use-filter-string-for-filename t)
+  (setq deft-auto-save-interval 0))
+
+(use-package org-mode
+  :defer t
+  :bind
+  (("C-x C-o" . (lambda () (interactive) (find-file 'org-default-notes-file))))
+  :config
+
+  (setq org-src-tab-acts-natively t)
+  (setq org-default-notes-file (expand-file-name "~/Dropbox/org/capture.org"))
+  (setq org-directory (expand-file-name "~/Dropbox/org"))
+  (setq org-default-notes-file (concat org-directory "/notes.org"))
+  (setq org-use-speed-commands t))
+
+(use-package org-journal
+  :defer t
+  :config
+  (setq org-journal-dir "~/Dropbox/journal"))
+
+(use-package org-web-tools
+  :defer t)
+
+(use-package helpful-
+  :bind
+  (("C-h f" . helpful-callable)
+   ("C-h v" . helpful-variable)
+   ("C-h k" . helpful-key)))
+
+(use-package alert
+  :commands (alert)
+  :init
+  (setq alert-default-style 'notifier))
 
 (use-package ace-link
   :defer 10
@@ -1596,11 +1733,11 @@ Version 2015-05-07"
 	(subst-char-in-region p1 p2 ?: ?-)
 	(insert "\n")
 	(insert (replace-regexp-in-string "-+" ""
-          (replace-regexp-in-string "-+:" "<r>"
-	  (replace-regexp-in-string ":-+" "<l>"
-	  (replace-regexp-in-string ":-+:" "<c>"
-           myLine)))))
-      ))))
+                                          (replace-regexp-in-string "-+:" "<r>"
+	                                                            (replace-regexp-in-string ":-+" "<l>"
+	                                                                                      (replace-regexp-in-string ":-+:" "<c>"
+                                                                                                                        myLine)))))
+        ))))
 
 (defun orgtbl-to-gfm (table params)
   "Convert the Orgtbl mode TABLE to GitHub Flavored Markdown."
@@ -1840,7 +1977,7 @@ buffer instead of replacing the text in region."
   (save-excursion
     (progn
       (move-beginning-of-line nil)
-	  (skip-chars-backward "\n \t")
+      (skip-chars-backward "\n \t")
       (back-to-indentation))
     (current-column)))
 
@@ -1857,7 +1994,7 @@ buffer instead of replacing the text in region."
   (interactive)
   (save-excursion
     (progn
-	  (move-to-column (get-current-indentation))
+      (move-to-column (get-current-indentation))
       (point))))
 
 (defun point-at-column-on-line (col)
@@ -1870,27 +2007,27 @@ buffer instead of replacing the text in region."
 
 (defun ig-move-line-to-column (col)
   "Move the line to col; fill with all spaces if moveing forward"
- (interactive "p")
+  (interactive "p")
   (let ((point-at-cur-indent (point-at-current-indentation))
-		(col-at-cur-indent (get-current-indentation)))
+	(col-at-cur-indent (get-current-indentation)))
     (cond (
-		   (= col 0)
-		   ;; delete to beginning of line or do nothing
-		   (if (= col-at-cur-indent 0)
-			   nil
-			 (delete-region point-at-cur-indent (point-at-column-on-line 0))))
-		  (
-			  (< col col-at-cur-indent)
-			  ;; delete from our current point BACK to col
-			  (delete-region (point-at-column-on-line col) point-at-cur-indent))
-		  (
-		   (> col col-at-cur-indent)
-		   ;; delete all text from indent to beginning of line
-		   (progn
-			 (delete-region point-at-cur-indent (point-at-column-on-line 0))
-			 (move-beginning-of-line nil)
-			 ;; add spaces forward
-			 (insert-string (make-string col ?\s)))))))
+	   (= col 0)
+	   ;; delete to beginning of line or do nothing
+	   (if (= col-at-cur-indent 0)
+	       nil
+	     (delete-region point-at-cur-indent (point-at-column-on-line 0))))
+	  (
+	   (< col col-at-cur-indent)
+	   ;; delete from our current point BACK to col
+	   (delete-region (point-at-column-on-line col) point-at-cur-indent))
+	  (
+	   (> col col-at-cur-indent)
+	   ;; delete all text from indent to beginning of line
+	   (progn
+	     (delete-region point-at-cur-indent (point-at-column-on-line 0))
+	     (move-beginning-of-line nil)
+	     ;; add spaces forward
+	     (insert-string (make-string col ?\s)))))))
 
 (defun ig-indent-sql ()
   "Indent by `tab-width` at most 1 time greater than the previously indented line otherwise go to the beginning of the line indent forward by `tab-width`"
@@ -1898,13 +2035,13 @@ buffer instead of replacing the text in region."
         (current (get-current-indentation)))
     (cond ( ;; exactly at previous line's indentation
            (= previous current)
-		   (ig-move-line-to-column (+ current tab-width)))
+	   (ig-move-line-to-column (+ current tab-width)))
 
 	  ( ;; current is greater than previous
 	   (> current previous)
-	    ;; exactly at one indentation forward from previous lines indent
+	   ;; exactly at one indentation forward from previous lines indent
 	   (if (= tab-width (- current previous))
-		;; move line to beginning
+	       ;; move line to beginning
 	       (ig-move-line-to-column 0)
 	     ;; go back to previous indentation level
 	     (ig-move-line-to-column previous)))
@@ -1921,7 +2058,25 @@ buffer instead of replacing the text in region."
 
 (global-set-key (kbd "C-RET") 'other-window)
 (global-set-key (kbd "C-z") 'delete-other-windows)
+(global-set-key (kbd "M-F") 'forward-to-word)
+(global-set-key (kbd "M-f") 'forward-word)
 
-(use-package server
-  :no-require
-  :hook (after-init . server-start))
+;; (use-package server
+;;   :no-require
+;;   :hook (after-init . server-start))
+
+(defun my-reload-dir-locals-for-current-buffer ()
+  "reload dir locals for the current buffer"
+  (interactive)
+  (let ((enable-local-variables :all))
+    (hack-dir-local-variables-non-file-buffer)))
+
+(defun my-reload-dir-locals-for-all-buffer-in-this-directory ()
+  "For every buffer with the same `default-directory` as the
+current buffer's, reload dir-locals."
+  (interactive)
+  (let ((dir (projectile-project-root)))
+    (dolist (buffer (buffer-list))
+      (with-current-buffer buffer
+        (when (equal default-directory dir))
+        (my-reload-dir-locals-for-current-buffer)))))
