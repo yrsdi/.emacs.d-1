@@ -60,7 +60,11 @@
 
 (use-package dashboard
   :init
-  (setq initial-buffer-choice (lambda () (switch-to-buffer "*dashboard*"))))
+  (setq initial-buffer-choice (lambda () (switch-to-buffer "*dashboard*")))
+  :config
+  (setq dashboard-banner-logo-title "Hack the planet.")
+  (setq dashboard-startup-banner nil)
+  (dashboard-setup-startup-hook))
 
 (use-package toggle-quotes
   :bind
@@ -628,13 +632,10 @@ Use in `isearch-mode-end-hook'."
             (define-prefix-command (cdr entry))
             (bind-key (car entry) (cdr entry)))
         '(("<C-m>" . my-ctrl-m-map)
-
           ("C-h e" . my-ctrl-h-e-map)
-
           ("C-c e" . my-ctrl-c-e-map)
           ("C-c m" . my-ctrl-c-m-map)
           ("C-c y" . my-ctrl-c-y-map)
-
           ("M-s =" . my-m-s-equals-map))))
 
 (eval-after-load "prelude-mode"
@@ -1237,6 +1238,7 @@ Interactively, this finds the issue at point."
 
 (use-package go-mode
   :defer t
+
   :init
   (load "~/dev/src/github.com/stapelberg/expanderr/expanderr.el")
   (setq go-test-verbose t)
@@ -1249,18 +1251,19 @@ Interactively, this finds the issue at point."
        (define-key go-mode-map (kbd "C-c C-a") nil)))
   :bind (:map go-mode-map
               ("M-b" . subword-backward)
-              ("M-f" . subword-forward))
+              ("M-f" . subword-forward)
+              ("C-c C-d" . go-guru-describe)
+              ("C-c C-i" . goimports)
+              ("C-c C-r" . godoctor-rename)
+              ("C-c C-c" . godoc-at-point)
+              ("C-c C-t" . go-test-current-file)
+              ("C-c g" . godoc)
+              ("M-." . go-guru-definition)
+              ("C-," . go-guru-definition-other-window)
+              ("C-c <C-m>" . tj-go-kill-doc))
+
   :bind
-  ("C-c C-d" . go-guru-describe)
-  ("C-c C-i" . goimports)
-  ("C-c C-r" . godoctor-rename)
-  ("C-c C-c" . godoc-at-point)
-  ("C-c C-t" . go-test-current-file)
-  ("C-c g" . godoc)
   ("M-j" . comment-indent-new-line)
-  ("M-." . go-guru-definition)
-  ("C-," . go-guru-definition-other-window)
-  ("C-c <C-m>" . tj-go-kill-doc)
 
   :config
   (setq tab-width 8)
@@ -1306,6 +1309,7 @@ Interactively, this finds the issue at point."
         (set (make-local-variable 'compile-command)
              "go build -v && go test -v && go vet")))
   (add-hook 'go-mode-hook 'my-go-hook)
+
   (use-package gotest))
 
 (use-package eacl
@@ -1583,13 +1587,14 @@ Version 2015-05-07"
 
   :bind (:map compilation-mode-map
               (("z" . delete-window)
-               ("RET" . tj-compile-goto-error-same-window)))
-  :bind (:map compilation-minor-mode-map
-              ("RET" . tj-compile-goto-error-same-window))
-  :bind (:map compilation-button-map
-              ("RET" . tj-compile-goto-error-same-window))
-  :bind (:map grep-mode-map
-              ("RET" . tj-compile-goto-error-same-window))
+               ;; ("RET" . tj-compile-goto-error-same-window)
+               ))
+  ;; :bind (:map compilation-minor-mode-map
+  ;;             ("RET" . tj-compile-goto-error-same-window))
+  ;; :bind (:map compilation-button-map
+  ;;             ("RET" . tj-compile-goto-error-same-window))
+  ;; :bind (:map grep-mode-map
+  ;;             ("RET" . tj-compile-goto-error-same-window))
 
   :preface
 
@@ -2249,9 +2254,30 @@ buffer instead of replacing the text in region."
 (global-set-key (kbd "M-F") 'forward-to-word)
 (global-set-key (kbd "M-f") 'forward-word)
 
+(use-package window-purpose
+  :config
+
+  (purpose-x-magit-multi-on)
+  (purpose-x-kill-setup)
+
+  (add-to-list 'purpose-user-mode-purposes '(go-mode . edit))
+  (add-to-list 'purpose-user-mode-purposes '(emacs-lisp-mode . edit))
+
+  (add-to-list 'purpose-user-mode-purposes '(go-test-mode . aux))
+  (add-to-list 'purpose-user-mode-purposes '(ag-mode . aux))
+  (add-to-list 'purpose-user-mode-purposes '(eshell-mode . aux))
+  (add-to-list 'purpose-user-mode-purposes '(helpful-mode . aux))
+  (add-to-list 'purpose-user-mode-purposes '(help-mode . aux))
+  (add-to-list 'purpose-user-mode-purposes '(magit-mode . aux))
+
+  (purpose-compile-user-configuration)
+
+  (purpose-mode))
+
 ;; (use-package server
 ;;   :no-require
 ;;   :hook (after-init . server-start))
+
 
 (defun my-reload-dir-locals-for-current-buffer ()
   "reload dir locals for the current buffer"
@@ -2292,3 +2318,5 @@ current buffer's, reload dir-locals."
       )
 
     (message "Hex %s is %d" tmp (string-to-number tmp 16))))
+
+(purpose-load-window-layout "code")
