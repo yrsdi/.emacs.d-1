@@ -1,4 +1,6 @@
 (require 'use-package)
+(require 'f)
+(require 'eshell)
 
 (setq flycheck-check-syntax-automatically '(save mode-enabled))
 (setq-default tab-width 8)
@@ -1330,7 +1332,9 @@ Interactively, this finds the issue at point."
 (use-package iy-go-to-char
   :bind
   (("M-s M-j" . iy-go-up-to-char)
-   ("M-s M-J" . iy-go-to-char-backward)))
+   ("M-s M-J" . iy-go-to-char-backward)
+   ("M-s M-s" . iy-go-to-or-up-to-continue)
+   ("M-s M-S" . iy-go-to-or-up-to-continue-backward)))
 
 (use-package bm
   :bind (("M-s b" . bm-toggle)
@@ -1568,6 +1572,12 @@ Version 2015-05-07"
   :bind
   (("M-R" . ivy-resume)))
 
+(use-package ivy-rich
+  :config
+  (setq ivy-virtual-abbreviate 'full
+        ivy-rich-switch-buffer-align-virtual-buffer t)
+  (setq ivy-rich-path-style 'abbrev)
+  (ivy-set-display-transformer 'ivy-switch-buffer 'ivy-rich-switch-buffer-transformer))
 
 (use-package copy-as-format
   :bind ("M-s M-w" . copy-as-format)
@@ -1767,6 +1777,8 @@ Version 2015-05-07"
   (defun reactivate-mark ()
     (interactive)
     (activate-mark))
+  :config
+  (add-to-list 'mc/cursor-specific-vars 'iy-go-to-char-start-pos)
   :bind (
          ("<C-m> e" . mc/edit-lines)
          ("<C-m> C-e" . mc/edit-ends-of-lines)
@@ -2100,9 +2112,6 @@ buffer instead of replacing the text in region."
       (shell-command (format "cd %s; git clone git@github.com:travisjeffery/%s.git" dev-dir repo))
       (projectile-find-file-in-directory repo))))
 
-(require 'f)
-(require 'eshell)
-
 (defun eshell/goto (&optional repo)
   "cd to `repo', cloning if necessary."
   (interactive)
@@ -2255,6 +2264,9 @@ buffer instead of replacing the text in region."
 (global-set-key (kbd "M-f") 'forward-word)
 
 (use-package window-purpose
+  :bind (:map purpose-mode-map
+              ("C-x b" . nil))
+
   :config
 
   (purpose-x-magit-multi-on)
@@ -2278,7 +2290,6 @@ buffer instead of replacing the text in region."
 ;;   :no-require
 ;;   :hook (after-init . server-start))
 
-
 (defun my-reload-dir-locals-for-current-buffer ()
   "reload dir locals for the current buffer"
   (interactive)
@@ -2297,7 +2308,6 @@ current buffer's, reload dir-locals."
 
 (defun tj-what-hexadecimal-value ()
   "Prints the decimal value of a hexadecimal string under cursor."
-
   (interactive)
 
   (let (input tmp p1 p2 )
