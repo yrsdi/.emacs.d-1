@@ -14,13 +14,27 @@
 (set-frame-font (font-spec :family "Operator Mono" :size 14 :weight 'normal))
 (add-to-list 'default-frame-alist '(font . "Operator Mono-14"))
 (global-hl-line-mode -1)
-(setq vc-handled-backends nil)
 (setq-default sentence-end-double-space nil)
 (setq-default fill-column 100)
 (setq load-prefer-newer t)
 (setq large-file-warning-threshold 100000000)
 (setq-default auto-fill-function 'do-auto-fill)
 (setq gc-cons-threshold 50000000)
+(setq vc-handled-backends nil)
+
+(let ((adv (cons 'advice
+                 (lambda ()
+                   (let ((os (char-syntax ?_)))
+                     (modify-syntax-entry ?_ "_")
+                     ad-do-it
+                     (modify-syntax-entry ?_ (string os))))))
+      (fun '(subword-forward subword-kill subword-backward
+                             subword-backward-kill subword-downcase subword-upcase
+                             subword-transpose)))
+  (dolist (f fun)
+    (ad-add-advice f (list 'underscore-wrap nil t adv)
+                   'around 'last)
+    (ad-activate f)))
 
 ;; (setq-default same-window-regexps '("."))
 
@@ -342,7 +356,7 @@ Use in `isearch-mode-end-hook'."
   :config
   (setq savehist-additional-variables
         ;; search entries
-        '(search-ring regexp-search-ring)
+        '(kill-ring search-ring regexp-search-ring)
         ;; save every minute
         savehist-autosave-interval 60
         ;; keep the home clean
@@ -810,13 +824,20 @@ Use in `isearch-mode-end-hook'."
   :commands (fancy-narrow-to-region fancy-widen))
 
 (use-package magit
-  :init
-  (setq magit-push-always-verify nil)
-
   :bind (:map magit-diff-mode-map
               (("C-o" . magit-diff-visit-file-other-window)))
 
   :config
+
+  (setq auto-revert-buffer-list-filter
+        'magit-auto-revert-repository-buffers-p)
+  (remove-hook 'magit-refs-sections-hook 'magit-insert-tags)
+  (setq vc-handled-backends nil)
+
+  (setq magit-push-always-verify nil)
+  (setq magit-refresh-status-buffer nil)
+  (remove-hook 'server-switch-hook 'magit-commit-diff)
+
   ;; (defun tj-magit-push-current-to-upstream (orig-fun &rest args)
   ;;   (apply orig-fun args)
   ;;   (message "Pushed!"))
@@ -848,8 +869,10 @@ Use in `isearch-mode-end-hook'."
   (magithub-feature-autoinject t)
 
   (magit-define-section-jumper magit-jump-to-pull-requests "Pull Requests" magithub-pull-requests-list)
+  (magit-define-section-jumper magit-jump-to-recent-commits "Recent commits" recent "HEAD~10..HEAD")
 
   (define-key magit-status-mode-map "jpr" 'magit-jump-to-pull-requests)
+  (define-key magit-status-mode-map "jrc" 'magit-jump-to-recent-commits)
 
   (defun tj-kill-issue-url (issue-or-pr)
     "Visits ISSUE-OR-PR in the browser.
@@ -1254,6 +1277,7 @@ Interactively, this finds the issue at point."
   :bind (:map go-mode-map
               ("M-b" . subword-backward)
               ("M-f" . subword-forward)
+              ("M-d" . subword-kill)
               ("C-c C-d" . go-guru-describe)
               ("C-c C-i" . goimports)
               ("C-c C-r" . godoctor-rename)
@@ -1795,7 +1819,7 @@ Version 2015-05-07"
 
 (use-package browse-url
   :bind
-  (("C-c x" . browse-url-at-point)))
+  (("C-x x" . browse-url-at-point)))
 
 (use-package deft
   :commands deft
@@ -2260,14 +2284,16 @@ buffer instead of replacing the text in region."
 
 (global-set-key (kbd "C-RET") 'other-window)
 (global-set-key (kbd "C-z") 'delete-other-windows)
-(global-set-key (kbd "M-F") 'forward-to-word)
-(global-set-key (kbd "M-f") 'forward-word)
 
 (use-package window-purpose
   :bind (:map purpose-mode-map
               ("C-x b" . nil))
 
   :config
+
+  (defun tj-purpose-windows ()
+    (interactive)
+    (purpose-load-window-layout "code"))
 
   (purpose-x-magit-multi-on)
   (purpose-x-kill-setup)
@@ -2281,6 +2307,8 @@ buffer instead of replacing the text in region."
   (add-to-list 'purpose-user-mode-purposes '(helpful-mode . aux))
   (add-to-list 'purpose-user-mode-purposes '(help-mode . aux))
   (add-to-list 'purpose-user-mode-purposes '(magit-mode . aux))
+  (add-to-list 'purpose-user-mode-purposes '(compilation-mode . aux))
+  (add-to-list 'purpose-user-regexp-purposes '("_test\\.go" . aux))
 
   (purpose-compile-user-configuration)
 
