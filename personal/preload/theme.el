@@ -1,2 +1,0 @@
-(setq prelude-theme nil)
-
