@@ -1,6 +1,7 @@
 (defun disable-font-lock-mode ()
   "Disable font lock mode."
   (font-lock-mode -1))
+
 (add-hook 'prog-mode-hook 'disable-font-lock-mode)
 (add-hook 'text-mode-hook 'disable-font-lock-mode)
 (add-hook 'conf-mode-hook 'disable-font-lock-mode)
@@ -145,11 +146,65 @@
       (shell-command (format "cd %s; git clone git@github.com:travisjeffery/%s.git" dev-dir repo))
       (projectile-find-file-in-directory repo))))
 
+(defun tj-marked ()
+  "Open this markdown file in Marked 2."
+  (interactive)
+  (shell-command (format "open -a \"Marked 2\" %s" (buffer-file-name))))
+
 (defun tj-newline-and-indent-up ()
+  "Open a new line above the current line."
   (interactive)
   (line-move -1)
   (end-of-line)
   (newline-and-indent))
+
+(defun tj-counsel-ag ()
+  (interactive)
+  (counsel-ag nil (projectile-project-root)))
+
+(defun tj-ag-regexp (string)
+  (interactive "sSearch string: ")
+  (ag-regexp string  (projectile-project-root)))
+
+
+(defun tj-reload-dir-locals-for-current-buffer ()
+  "reload dir locals for the current buffer"
+  (interactive)
+  (let ((enable-local-variables :all))
+    (hack-dir-local-variables-non-file-buffer)))
+
+(defun tj-reload-dir-locals-for-all-buffer-in-this-directory ()
+  "For every buffer with the same `default-directory` as the
+  current buffer's, reload dir-locals."
+  (interactive)
+  (let ((dir (projectile-project-root)))
+    (dolist (buffer (buffer-list))
+      (with-current-buffer buffer
+	(when (equal default-directory dir))
+	(tj-reload-dir-locals-for-current-buffer)))))
+
+(defun tj-what-hexadecimal-value ()
+  "Prints the decimal value of a hexadecimal string under cursor."
+  (interactive)
+
+  (let (input tmp p1 p2 )
+    (save-excursion
+      (re-search-backward "[^0-9A-Fa-fx#]" nil t)
+      (forward-char)
+      (setq p1 (point) )
+      (re-search-forward "[^0-9A-Fa-fx#]" nil t)
+      (backward-char)
+      (setq p2 (point) ) )
+
+    (setq input (buffer-substring-no-properties p1 p2) )
+
+    (let ((case-fold-search nil) )
+      (setq tmp (replace-regexp-in-string "^0x" "" input )) ; C, Perl, …
+      (setq tmp (replace-regexp-in-string "^#x" "" tmp )) ; elisp …
+      (setq tmp (replace-regexp-in-string "^#" "" tmp ))  ; CSS …
+      )
+
+    (message "Hex %s is %d" tmp (string-to-number tmp 16))))
 
 (defun tj-find-config ()
   "Find a personal config file to edit."
@@ -205,7 +260,7 @@
 
 (defun tj-goto-match-beginning ()
   "Go to the start of current isearch match.
- Use in `isearch-mode-end-hook'."
+  Use in `isearch-mode-end-hook'."
   (when (and isearch-forward
 	     (number-or-marker-p isearch-other-end)
 	     (not mark-active)
@@ -217,6 +272,7 @@
   (interactive)
   (call-interactively #'comment-line)
   (unless (region-active-p) (forward-line -1)))
+
 (global-set-key (kbd "M-;") 'tj-comment-line)
 
 (global-set-key (kbd "C-RET") 'other-window)

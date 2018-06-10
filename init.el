@@ -962,7 +962,7 @@
               ("M-I" . paredit-splice-sexp))
   :config
   (add-hook 'lisp-interaction-mode-hook #'paredit-mode)
-  (add-hook 'emacs-lisp-mode #'paredit-mode)
+  (add-hook 'emacs-lisp-mode-hook #'paredit-mode)
   (add-hook 'ielm-mode-hook #'paredit-mode)
   (add-hook 'lisp-mode-hook #'paredit-mode)
   (add-hook 'eval-expression-minibuffer-setup-hook #'paredit-mode))
@@ -1791,11 +1791,42 @@
 	 ("M-O" . isearch-moccur-all)))
 
 (use-package isearch
+  :config
+
+  (defun zap-to-isearch (rbeg rend)
+    "Kill the region between the mark and the closest portion of
+  the isearch match string. The behaviour is meant to be analogous
+  to zap-to-char; let's call it zap-to-isearch. The deleted region
+  does not include the isearch word. This is meant to be bound only
+  in isearch mode.
+  The point of this function is that oftentimes you want to delete
+  some portion of text, one end of which happens to be an active
+  isearch word. The observation to make is that if you use isearch
+  a lot to move the cursor around (as you should, it is much more
+  efficient than using the arrows), it happens a lot that you could
+  just delete the active region between the mark and the point, not
+  include the isearch word."
+    (interactive "r")
+    (when (not mark-active)
+      (error "Mark is not active"))
+    (let* ((isearch-bounds (list isearch-other-end (point)))
+           (ismin (apply 'min isearch-bounds))
+           (ismax (apply 'max isearch-bounds))
+           )
+      (if (< (mark) ismin)
+          (kill-region (mark) ismin)
+        (if (> (mark) ismax)
+            (kill-region ismax (mark))
+          (error "Internal error in isearch kill function.")))
+      (isearch-exit)))
+
   :bind
   (("C-s" . isearch-forward-regexp)
    ("C-M-s" . isearch-forward)
    ("C-r" . isearch-backward-regexp)
-   ("C-M-r" . isearch-backward)))
+   ("C-M-r" . isearch-backward))
+  (:map isearch-mode-map
+        ("M-z" . zap-to-isearch)))
 
 (use-package isearch+
   :config
@@ -1950,11 +1981,6 @@
 
 (setq comment-multi-line t)
 (setq-default indent-tabs-mode nil)
-
-(defun tj-marked ()
-  "Open this markdown file in Marked 2."
-  (interactive)
-  (shell-command (format "open -a \"Marked 2\" %s" (buffer-file-name))))
 
 (use-package eshell
   :commands (eshell eshell-command)
@@ -2140,15 +2166,6 @@
   :bind
   ("C-!" . mf/mirror-region-in-multifiles))
 
-(defun tj-counsel-ag ()
-  (interactive)
-  (counsel-ag nil (projectile-project-root)))
-
-(defun tj-ag-regexp (string)
-  (interactive "sSearch string: ")
-  (ag-regexp string  (projectile-project-root)))
-
-
 (use-package toggle-quotes
   :ensure t
   :bind
@@ -2163,79 +2180,11 @@
   :bind
   (("M-Q" . unfill-paragraph)))
 
-(defun tj-reload-dir-locals-for-current-buffer ()
-  "reload dir locals for the current buffer"
-  (interactive)
-  (let ((enable-local-variables :all))
-    (hack-dir-local-variables-non-file-buffer)))
-
-(defun tj-reload-dir-locals-for-all-buffer-in-this-directory ()
-  "For every buffer with the same `default-directory` as the
-current buffer's, reload dir-locals."
-  (interactive)
-  (let ((dir (projectile-project-root)))
-    (dolist (buffer (buffer-list))
-      (with-current-buffer buffer
-	(when (equal default-directory dir))
-	(tj-reload-dir-locals-for-current-buffer)))))
-
-
-(defun zap-to-isearch (rbeg rend)
-  "Kill the region between the mark and the closest portion of
-  the isearch match string. The behaviour is meant to be analogous
-  to zap-to-char; let's call it zap-to-isearch. The deleted region
-  does not include the isearch word. This is meant to be bound only
-  in isearch mode.
-  The point of this function is that oftentimes you want to delete
-  some portion of text, one end of which happens to be an active
-  isearch word. The observation to make is that if you use isearch
-  a lot to move the cursor around (as you should, it is much more
-  efficient than using the arrows), it happens a lot that you could
-  just delete the active region between the mark and the point, not
-  include the isearch word."
-  (interactive "r")
-  (when (not mark-active)
-    (error "Mark is not active"))
-  (let* ((isearch-bounds (list isearch-other-end (point)))
-         (ismin (apply 'min isearch-bounds))
-         (ismax (apply 'max isearch-bounds))
-         )
-    (if (< (mark) ismin)
-        (kill-region (mark) ismin)
-      (if (> (mark) ismax)
-          (kill-region ismax (mark))
-        (error "Internal error in isearch kill function.")))
-    (isearch-exit)))
-(define-key isearch-mode-map [(meta z)] 'zap-to-isearch)
-
 (autoload 'zap-up-to-char "misc"
   "Kill up to, but not including ARGth occurrence of CHAR.
 
   \(fn arg char)"
   'interactive)
-
-(defun tj-what-hexadecimal-value ()
-  "Prints the decimal value of a hexadecimal string under cursor."
-  (interactive)
-
-  (let (input tmp p1 p2 )
-    (save-excursion
-      (re-search-backward "[^0-9A-Fa-fx#]" nil t)
-      (forward-char)
-      (setq p1 (point) )
-      (re-search-forward "[^0-9A-Fa-fx#]" nil t)
-      (backward-char)
-      (setq p2 (point) ) )
-
-    (setq input (buffer-substring-no-properties p1 p2) )
-
-    (let ((case-fold-search nil) )
-      (setq tmp (replace-regexp-in-string "^0x" "" input )) ; C, Perl, …
-      (setq tmp (replace-regexp-in-string "^#x" "" tmp )) ; elisp …
-      (setq tmp (replace-regexp-in-string "^#" "" tmp ))  ; CSS …
-      )
-
-    (message "Hex %s is %d" tmp (string-to-number tmp 16))))
 
 (when (file-exists-p custom-file)
   (load custom-file))
