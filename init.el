@@ -738,8 +738,8 @@
 	;; ("C-c <C-m>" . tj-go-kill-doc)
         ("C-c C-d" . go-guru-describe)
 	("M-." . go-guru-definition)
-	("C-," . go-guru-definition-other-window)
-        )
+        ("s-t" . counsel-projectile-find-file)
+	("C-," . go-guru-definition-other-window))
   :config
   (load "~/dev/src/github.com/stapelberg/expanderr/expanderr.el")
   (setq go-test-verbose t)
@@ -933,8 +933,8 @@
       (call-interactively #'magit-push-current)))
 
   :bind
-  (
-   ("C-c t" . projectile-toggle-between-implementation-and-test)
+  (("C-c t" . projectile-toggle-between-implementation-and-test)
+   ("C-c p p" . projectile-switch-project)
    ("C-c C-p" . projectile-test-project)
    ("M-m" . projectile-commander)
    ("C-c P" . 'projectile-switch-project)))
@@ -1279,7 +1279,6 @@
 
 (use-package exec-path-from-shell
   :ensure t
-  :defer t
   :config
   (when (memq window-system '(mac ns))
     (exec-path-from-shell-initialize)))
@@ -1868,7 +1867,6 @@
   :ensure t)
 
 (use-package counsel
-  :after ivy
   :diminish
   :ensure t
   :config
@@ -1918,32 +1916,24 @@
   ;;   (interactive "sPKG: ")
   ;;   (let ((dir (f-join (getenv "GOPATH") "src" pkg)))
   ;;     (projectile-find-file-in-directory dir)))
-
-  (add-to-list 'ivy-sort-matches-functions-alist
-               '(counsel-projectile-find-file . ivy--sort-files-by-date))
-
-  (add-to-list 'ivy-sort-matches-functions-alist
-               '(counsel-find-file . ivy--sort-files-by-date)))
+)
 
 (use-package counsel-projectile
   :ensure t
-  :after counsel
   :config
   (setq counsel-projectile-remove-current-buffer t)
   (setq counsel-projectile-remove-current-project t)
   (setq counsel--find-file-matcher 'counsel--find-file-matcher)
 
   (add-to-list 'ivy-sort-matches-functions-alist
-               '(counsel-projectile-find-file . file-newer-than-file-p))
+               '(counsel-projectile-find-file . ivy--sort-files-by-date))
 
   (add-to-list 'ivy-sort-matches-functions-alist
-               '(counsel-projectile-switch-project . file-newer-than-file-p))
+               '(counsel-find-file . ivy--sort-files-by-date))
 
   :bind
   (("s-t" . counsel-projectile-find-file)
-   ("C-c p f" . counsel-projectile-find-file)
-   ("C-c p p" . counsel-projectile-switch-project)
-   (:map go-mode-map ("s-t" . counsel-projectile-find-file))))
+   ("C-c p f" . counsel-projectile-find-file)))
 
 (use-package github-browse-file
   :ensure t
