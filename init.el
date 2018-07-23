@@ -1978,7 +1978,6 @@
   :config
   (selected-global-mode 1))
 
-
 ;; temporarily highlight changes from yanking, etc
 (use-package volatile-highlights
   :ensure t
@@ -2236,6 +2235,10 @@
 (define-key occur-mode-map (kbd "v") 'occur-mode-display-occurrence)
 (define-key occur-mode-map (kbd "n") 'next-line)
 (define-key occur-mode-map (kbd "p") 'previous-line)
+
+(use-package plain-theme
+  :config
+  (load-theme 'plain t))
 
 (use-package unfill
   :ensure t
