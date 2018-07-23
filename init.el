@@ -18,6 +18,14 @@
 
 (define-key isearch-mode-map (kbd "C-o") #'isearch-occur)
 
+(define-key isearch-mode-map [(control return)]
+  #'isearch-exit-other-end)
+(defun isearch-exit-other-end ()
+  "Exit isearch, at the opposite end of the string."
+  (interactive)
+  (isearch-exit)
+  (goto-char isearch-other-end))
+
 (define-key 'help-command (kbd "C-i") #'info-display-manual)
 
 ;; smart tab behavior - indent or complete
@@ -62,6 +70,32 @@
 	(setq ffap-file-at-point-line-number line-number)
       (setq ffap-file-at-point-line-number nil))))
 
+(defadvice ffap-guesser (after ffap-store-line-number activate)
+  "Search `ffap-string-at-point' for a line number pattern and
+ save it in `ffap-file-at-point-line-number' variable."
+  (let* ((string (ffap-string-at-point)) ;; string/name definition copied from `ffap-string-at-point'
+	 (name
+	  (or (condition-case nil
+		  (and (not (string-match "//" string)) ; foo.com://bar
+		       (substitute-in-file-name string))
+		(error nil))
+	      string))
+	 (line-number-string
+	  (and (string-match ":[0-9]+" name)
+	       (substring name (1+ (match-beginning 0)) (match-end 0))))
+	 (line-number
+	  (and line-number-string
+	       (string-to-number line-number-string))))
+    (if (and line-number (> line-number 0))
+	(setq ffap-file-at-point-line-number line-number)
+      (setq ffap-file-at-point-line-number nil))))
+
+(defadvice find-file (after ffap-goto-line-number activate)
+  "If `ffap-file-at-point-line-number' is non-nil goto this line."
+  (when ffap-file-at-point-line-number
+    (with-no-warnings (goto-line ffap-file-at-point-line-number))
+    (setq ffap-file-at-point-line-number nil)))
+
 (defadvice find-file-at-point (after ffap-goto-line-number activate)
   "If `ffap-file-at-point-line-number' is non-nil goto this line."
   (when ffap-file-at-point-line-number
@@ -95,7 +129,6 @@
     (crux-start-or-switch-to 'ielm "*ielm*"))
 
   (add-hook 'emacs-lisp-mode-hook #'eldoc-mode)
-  (add-hook 'emacs-lisp-mode-hook #'rainbow-delimiters-mode)
   (define-key emacs-lisp-mode-map (kbd "C-c C-z") #'visit-ielm)
   (define-key emacs-lisp-mode-map (kbd "C-c C-c") #'eval-defun)
   (define-key emacs-lisp-mode-map (kbd "C-c C-b") #'eval-buffer)
@@ -105,14 +138,13 @@
 (use-package ielm
   :ensure t
   :config
-  (add-hook 'ielm-mode-hook #'eldoc-mode)
-  (add-hook 'ielm-mode-hook #'rainbow-delimiters-mode))
+  (add-hook 'ielm-mode-hook #'eldoc-mode) )
 
 (use-package avy
   :ensure t
   :bind (("s-." . avy-goto-word-or-subword-1)
 	 ("s-," . avy-goto-char)
-	 ("C-j" . avy-goto-char-timer))
+	 ("<C-return>" . avy-goto-char-timer))
   :config
   (avy-setup-default)
   (setq avy-background t))
@@ -133,9 +165,21 @@
   :config
   (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right))
 
-(use-package magit
+
+(use-package dashboard
   :ensure t
   :init
+  (setq initial-buffer-choice (lambda () (switch-to-buffer "*dashboard*")))
+  :config
+  (setq dashboard-banner-logo-title "Do the work.")
+  (setq dashboard-startup-banner nil)
+  (dashboard-setup-startup-hook))
+
+(use-package magit
+  :ensure t
+  :bind (:map magit-diff-mode-map
+	      (("C-o" . magit-diff-visit-file-other-window)))
+  :config
   (setq auto-revert-buffer-list-filter
 	'magit-auto-revert-repository-buffers-p)
   (remove-hook 'magit-refs-sections-hook 'magit-insert-tags)
@@ -143,12 +187,12 @@
   (setq magit-push-always-verify nil)
   (setq magit-refresh-status-buffer nil)
 
-  :bind (:map magit-diff-mode-map
-	      (("C-o" . magit-diff-visit-file-other-window)))
-  :config
-  (setq magit-file-mode nil)
-  (setq global-auto-revert-mode nil)
-  (setq magit-auto-revert-mode nil)
+  (magit-define-section-jumper magit-jump-to-pull-requests "Pull Requests" magithub-pull-requests-list)
+  (magit-define-section-jumper magit-jump-to-recent-commits "Recent commits" recent "HEAD~10..HEAD")
+
+  (define-key magit-status-mode-map "jpr" 'magit-jump-to-pull-requests)
+  (define-key magit-status-mode-map "jrc" 'magit-jump-to-recent-commits)
+
 
   (defun tj-semaphore-open-branch ()
     "Open branch in Semaphore CI"
@@ -207,9 +251,8 @@
 
 (use-package ivy-rich
   :ensure t
-  :config
-  (setq ivy-virtual-abbreviate 'full
-        ivy-rich-switch-buffer-align-virtual-buffer t)
+  :config  (setq ivy-virtual-abbreviate 'full
+                 ivy-rich-switch-buffer-align-virtual-buffer t)
   (setq ivy-rich-path-style 'abbrev)
   (ivy-set-display-transformer 'ivy-switch-buffer 'ivy-rich-switch-buffer-transformer))
 
@@ -282,6 +325,10 @@
     (setq-local word-wrap nil))
   :hook (dired-toggle-mode . my-dired-toggle-mode-hook))
 
+(use-package yasnippet
+  :config
+  (yas-global-mode))
+
 (use-package auto-yasnippet
   :ensure t
   :after yasnippet
@@ -316,15 +363,9 @@
 		(ibuffer-do-sort-by-alphabetic)))))
 
 (use-package magithub
-  :after magit
+  :ensure t
   :config
   (magithub-feature-autoinject t)
-
-  (magit-define-section-jumper magit-jump-to-pull-requests "Pull Requests" magithub-pull-requests-list)
-  (magit-define-section-jumper magit-jump-to-recent-commits "Recent commits" recent "HEAD~10..HEAD")
-
-  (define-key magit-status-mode-map "jpr" 'magit-jump-to-pull-requests)
-  (define-key magit-status-mode-map "jrc" 'magit-jump-to-recent-commits)
 
   (defun tj-kill-issue-url (issue-or-pr)
     "Visits ISSUE-OR-PR in the browser.
@@ -475,6 +516,7 @@
 (use-package ivy
   :ensure t
   :config
+  (setq ivy-initial-inputs-alist nil)
   (setq ivy-use-virtual-buffers t)
   (setq enable-recursive-minibuffers t)
   (setq projectile-completion-system 'ivy)
@@ -514,7 +556,7 @@
 
 (use-package company-tern
   :ensure t
-  :defer t
+   :defer t
   :init
   (with-eval-after-load 'company
     (add-to-list 'company-backends 'company-tern)))
@@ -526,6 +568,9 @@
 (use-package web-mode
   :ensure t
   :config
+
+  (add-to-list 'auto-mode-alist '("\\.html\\'" . web-mode))
+
   (setq-default flycheck-disabled-checkers
 		(append flycheck-disabled-checkers
 			'(javascript-jshint)))
@@ -544,7 +589,8 @@
   (setq web-mode-content-types-alist
 	'(("jsx" . "\\.js[x]?\\'")))
   (setq web-mode-engines-alist
-	'(("reactjs" . "\\.js$")))
+	'(("reactjs" . "\\.js$")
+          ("go" . "\\.html$")))
   (with-eval-after-load 'web-mode
     (add-to-list 'web-mode-indentation-params '("lineup-args" . nil))
     (add-to-list 'web-mode-indentation-params '("lineup-concats" . nil))
@@ -654,50 +700,6 @@
 
   (global-set-key (kbd "C-c C-a") 'ag-regexp))
 
-(defun goimports ()
-  "Formats the current buffer according to the goimports tool."
-  (interactive)
-  (let ((tmpfile (make-temp-file "goimports" nil ".go"))
-	(patchbuf (get-buffer-create "*Goimports patch*"))
-	(errbuf (get-buffer-create "*Goimports Errors*"))
-	(coding-system-for-read 'utf-8)
-	(coding-system-for-write 'utf-8))
-
-    (with-current-buffer errbuf
-      (setq buffer-read-only nil)
-      (erase-buffer))
-    (with-current-buffer patchbuf
-      (erase-buffer))
-
-    (write-region nil nil tmpfile)
-
-    ;; We're using errbuf for the mixed stdout and stderr output. This
-    ;; is not an issue because goimports -w does not produce any stdout
-    ;; output in case of success.
-    (if (zerop (call-process "goimports" nil errbuf nil "-w" tmpfile))
-	(if (zerop (call-process-region (point-min) (point-max) "diff" nil patchbuf nil "-n" "-" tmpfile))
-	    (progn
-	      (kill-buffer errbuf)
-	      (message "Buffer is already goimportsed"))
-	  (go--apply-rcs-patch patchbuf)
-	  (kill-buffer errbuf)
-	  (message "Applied goimports"))
-      (message "Could not apply goimports. Check errors for details")
-      (goimports--process-errors (buffer-file-name) tmpfile errbuf))
-
-    (kill-buffer patchbuf)
-    (delete-file tmpfile)))
-
-(defun goimports--process-errors (filename tmpfile errbuf)
-  ;; Convert the goimports stderr to something understood by the compilation mode.
-  (with-current-buffer errbuf
-    (goto-char (point-min))
-    (insert "goimports errors:\n")
-    (while (search-forward-regexp (concat "^\\(" (regexp-quote tmpfile) "\\):") nil t)
-      (replace-match (file-name-nondirectory filename) t t nil 1))
-    (compilation-mode)
-    (display-buffer errbuf)))
-
 (use-package company-quickhelp
   :ensure t
   :defer t
@@ -707,14 +709,9 @@
   '(define-key company-active-map (kbd "M-h") #'company-quickhelp-manual-begin))
 
 (use-package eldoc
+  :ensure t
   :diminish)
 
-(use-package company-go
-  :ensure t
-  :defer t
-  :config
-  (set (make-local-variable 'company-backends)
-       '((company-dabbrev-code company-go))))
 
 (use-package go-eldoc
   :ensure t
@@ -723,34 +720,40 @@
   :init
   (add-hook 'go-mode-hook 'go-eldoc-setup))
 
+(use-package godoctor :ensure t)
+
 (use-package go-mode
   :ensure t
-  :defer t
-  :init
+  :bind
+  (:map go-mode-map
+        ("M-j" . comment-indent-new-line)
+        ("<tab>" . company-indent-or-complete-common)
+	("M-b" . subword-backward)
+	("M-f" . subword-forward)
+	("M-d" . subword-kill)
+	("C-c C-r" . godoctor-rename)
+	("C-c C-c" . godoc-at-point)
+	("C-c C-t" . go-test-current-file)
+	("C-c g" . godoc)
+	;; ("C-c <C-m>" . tj-go-kill-doc)
+        ("C-c C-d" . go-guru-describe)
+	("M-." . go-guru-definition)
+	("C-," . go-guru-definition-other-window)
+        )
+  :config
   (load "~/dev/src/github.com/stapelberg/expanderr/expanderr.el")
   (setq go-test-verbose t)
   (setq gofmt-command "goimports")
   (setenv "GOPATH" (expand-file-name (concat (getenv "HOME") "/dev")))
   (setenv "GOROOT" "/usr/local/go")
   (setq company-go-show-annotation t)
-  (eval-after-load "go-mode"
-    '(progn
-       (define-key go-mode-map (kbd "C-c C-a") nil)))
-  :bind (:map go-mode-map
-	      ("<tab>" . company-indent-or-complete-common)
-	      ("M-b" . subword-backward)
-	      ("M-f" . subword-forward)
-	      ("M-d" . subword-kill)
-	      ("C-c C-i" . goimports)
-	      ("C-c C-r" . godoctor-rename)
-	      ("C-c C-c" . godoc-at-point)
-	      ("C-c C-t" . go-test-current-file)
-	      ("C-c g" . godoc)
-	      ("C-c <C-m>" . tj-go-kill-doc))
-  :bind
-  ("M-j" . comment-indent-new-line)
 
-  :config
+  (use-package company-go
+  :ensure t
+  :defer t)
+
+  (add-hook 'before-save-hook 'gofmt-before-save nil t)
+
   (setq tab-width 8)
 
   (setq-local compilation-read-command nil)
@@ -758,7 +761,9 @@
   (defun tj-go-find-file ()
     "Find file under $GOROOT."
     (interactive)
-    (counsel-find-file "/usr/local/go/src/"))
+    (find-file "/usr/local/go/src/"))
+
+  (use-package go-add-tags :ensure t)
 
   (use-package go-errcheck
     :ensure t
@@ -783,14 +788,15 @@
 		(message (format "killed: %s" curinfo)))))))))
 
   (defun tj-go-hook ()
-    (setq display-line-numbers nil)
     (which-function-mode)
     (highlight-symbol-mode)
     (subword-mode)
     (flycheck-mode)
     (electric-indent-mode)
+    (electric-pair-mode)
     (selected-minor-mode 1)
     (font-lock-mode -1)
+    (setq company-backends '(company-go))
     (go-guru-hl-identifier-mode)
     (if (not (string-match "go" compile-command))
 	(set (make-local-variable 'compile-command)
@@ -798,18 +804,23 @@
   (add-hook 'go-mode-hook 'tj-go-hook)
 
   (use-package go-guru
-    :ensure t
-    :bind (:map go-mode-map
-                (("C-c C-d" . go-guru-describe)
-	         ("M-." . go-guru-definition)
-	         ("C-," . go-guru-definition-other-window))))
+    :ensure t)
 
-  (use-package gotest :ensure t))
+  (use-package gotest :ensure t)
+
+  :hook
+  (go-mode . tj-go-hook))
+
+
+(use-package selected :ensure t)
 
 (use-package winner
   :diminish
   :config
-  (winner-mode +1))
+  (winner-mode +1)
+  :bind
+  (("M-[" . winner-undo)
+   ("M-]" . winner-redo)))
 
 (use-package eacl
   :ensure t
@@ -860,29 +871,31 @@
   :ensure t
   :config
 
+  (setq projectile-indexing-method 'alien)
   (setq projectile-mode-line nil)
-  (setq projectile-sort-order 'recently-active)
+   (setq projectile-sort-order 'modification-time)
   ;; (setq projectile-sort-order 'default)
 
   ;; Fix the issue where the older project name is prepended to 'Find File:'
   ;; prompt after `projectile-switch-project'
   ;; https://github.com/bbatsov/projectile/issues/1067#issuecomment-270656085
   ;; https://github.com/bbatsov/projectile/issues/1067#issuecomment-270686996
-  (defun projectile-project-name-old ()
-    "Return project name."
-    (if projectile-project-name
-	projectile-project-name
-      (let ((project-root
-	     (condition-case nil
-		 (projectile-project-root)
-	       (error nil))))
-	(if project-root
-	    (funcall projectile-project-name-function project-root)
-	  "-"))))
-  (advice-add 'projectile-project-name :override #'projectile-project-name-old)
+  ;; (defun projectile-project-name-old ()
+  ;;   "Return project name."
+  ;;   (if projectile-project-name
+  ;;       projectile-project-name
+  ;;     (let ((project-root
+  ;;            (condition-case nil
+  ;;       	 (projectile-project-root)
+  ;;              (error nil))))
+  ;;       (if project-root
+  ;;           (funcall projectile-project-name-function project-root)
+  ;;         "-"))))
+  ;; (advice-add 'projectile-project-name :override #'projectile-project-name-old)
 
   (setq projectile-switch-project-action #'projectile-commander)
   (add-to-list 'projectile-globally-ignored-directories "Godeps/_workspace")
+  (add-to-list 'projectile-globally-ignored-directories "vendor")
   ;; (add-to-list 'projectile-globally-ignored-directories "_build")
   (add-to-list 'projectile-globally-ignored-directories "deps")
   (add-to-list 'projectile-globally-ignored-directories "node_modules")
@@ -897,11 +910,13 @@
 
   (def-projectile-commander-method ?e "Open eshell in root directory." (call-interactively 'projectile-run-eshell))
   (def-projectile-commander-method ?! "Run shell command in root directory." (call-interactively 'projectile-run-async-shell-command-in-root))
+  (def-projectile-commander-method ?m "Run shell command in root directory." (call-interactively 'projectile-run-async-shell-command-in-root))
   (def-projectile-commander-method ?a "Run ag in the project." (let ((current-prefix-arg 1)) (call-interactively 'projectile-ag)))
+  (def-projectile-commander-method ?A "Run ack in the project." (let ((current-prefix-arg 1)) (call-interactively 'ack)))
   (def-projectile-commander-method ?c "Compile project." (call-interactively 'projectile-compile-project))
   (def-projectile-commander-method ?d "Open project root in dired." (call-interactively 'projectile-dired))
   (def-projectile-commander-method ?t "Test project." (call-interactively 'projectile-test-project))
-  (def-projectile-commander-method ?G "Open ile in git." (call-interactively 'github-browse-file))
+  (def-projectile-commander-method ?G "Open file in git." (call-interactively 'github-browse-file))
 
   (def-projectile-commander-method ?d "Open project root in dired." (call-interactively 'projectile-dired))
   (def-projectile-commander-method ?u
@@ -936,7 +951,7 @@
 (use-package projectile
   :ensure t
   :init
-  (setq projectile-completion-system 'ivy)
+  ;; (setq projectile-completion-system 'ivy)
   :config
   (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
   (projectile-global-mode +1))
@@ -957,15 +972,19 @@
 
 (use-package paredit
   :ensure t
-  :diminish
-  :bind (:map paredit-mode-map
-              ("M-I" . paredit-splice-sexp))
-  :config
+  :init
   (add-hook 'lisp-interaction-mode-hook #'paredit-mode)
   (add-hook 'emacs-lisp-mode-hook #'paredit-mode)
   (add-hook 'ielm-mode-hook #'paredit-mode)
   (add-hook 'lisp-mode-hook #'paredit-mode)
-  (add-hook 'eval-expression-minibuffer-setup-hook #'paredit-mode))
+  (add-hook 'eval-expression-minibuffer-setup-hook #'paredit-mode)
+  :diminish
+  :bind (:map paredit-mode-map
+              ("M-;" . nil)
+              ("M-r" . nil)
+              ("M-I" . paredit-splice-sexp)))
+
+(use-package smex :ensure t)
 
 (use-package paren
   :config
@@ -1220,6 +1239,7 @@
 	(funcall dired-omit-regexp-orig)))))
 
 (use-package dired-narrow
+  :ensure t
   :bind (:map dired-mode-map
 	      ("/" . dired-narrow)))
 
@@ -1259,6 +1279,7 @@
 
 (use-package exec-path-from-shell
   :ensure t
+  :defer t
   :config
   (when (memq window-system '(mac ns))
     (exec-path-from-shell-initialize)))
@@ -1268,13 +1289,6 @@
   :bind
   (([(meta shift up)] . move-text-up)
    ([(meta shift down)] . move-text-down)))
-
-(use-package rainbow-delimiters
-  :ensure t)
-
-(use-package rainbow-mode
-  :ensure t)
-
 
 (use-package whitespace
   :init
@@ -1658,6 +1672,7 @@
   :ensure t
   :diminish
   :config
+
   ;; Ignore go test -c output files
   (add-to-list 'completion-ignored-extensions ".test")
   (setq company-ddabbrev-code-everywhere t)
@@ -1740,7 +1755,6 @@
 	 ("C-c w" . crux-swap-windows)
 	 ("C-c D" . crux-delete-file-and-buffer)
 	 ("C-c r" . crux-rename-buffer-and-file)
-	 ("C-c t" . crux-visit-term-buffer)
 	 ("C-c k" . crux-kill-other-buffers)
 	 ("C-c TAB" . crux-indent-rigidly-and-copy-to-clipboard)
 	 ("C-c I" . crux-find-user-init-file)
@@ -1793,6 +1807,10 @@
 (use-package isearch
   :config
 
+  (setq isearch-lazy-highlight 'all-windows)
+  (setq isearch-allow-scroll t)
+  (setq lazy-highlight-cleanup t)
+
   (defun zap-to-isearch (rbeg rend)
     "Kill the region between the mark and the closest portion of
   the isearch match string. The behaviour is meant to be analogous
@@ -1828,11 +1846,6 @@
   (:map isearch-mode-map
         ("M-z" . zap-to-isearch)))
 
-(use-package isearch+
-  :config
-  (setq isearchp-deactivate-region-flag nil)
-  (setq isearchp-drop-mismatch t))
-
 (use-package moccur-edit
   :after color-moccur)
 
@@ -1849,7 +1862,7 @@
 (use-package ace-window
   :ensure t
   :diminish
-  :bind* ("<C-return>" . ace-window))
+  :bind* ("<s-return>" . ace-window))
 
 (use-package swiper
   :ensure t)
@@ -1858,6 +1871,12 @@
   :after ivy
   :diminish
   :ensure t
+  :config
+
+  (defun tj-counsel-ag ()
+  (interactive)
+  (counsel-ag nil (projectile-project-root)))
+  (setq counsel-find-file-at-point t)
   :bind
   (("C-*"     . counsel-org-agenda-headlines)
    ("C-x C-f" . counsel-find-file)
@@ -1910,19 +1929,43 @@
   :ensure t
   :after counsel
   :config
-  (setcdr (assoc 'counsel-projectile-find-file ivy-sort-functions-alist)
-	  'file-newer-than-file-p)
-  (setcdr (assoc 'counsel-projectile-switch-project ivy-sort-functions-alist)
-	  'file-newer-than-file-p)
+  (setq counsel-projectile-remove-current-buffer t)
+  (setq counsel-projectile-remove-current-project t)
+  (setq counsel--find-file-matcher 'counsel--find-file-matcher)
+
+  (add-to-list 'ivy-sort-matches-functions-alist
+               '(counsel-projectile-find-file . file-newer-than-file-p))
+
+  (add-to-list 'ivy-sort-matches-functions-alist
+               '(counsel-projectile-switch-project . file-newer-than-file-p))
+
   :bind
   (("s-t" . counsel-projectile-find-file)
    ("C-c p f" . counsel-projectile-find-file)
-   ("C-c p p" . counsel-projectile-switch-project)))
+   ("C-c p p" . counsel-projectile-switch-project)
+   (:map go-mode-map ("s-t" . counsel-projectile-find-file))))
 
 (use-package github-browse-file
   :ensure t
   :bind
   (("M-s g" . github-browse-file)))
+
+(use-package minibuffer
+  :config
+  (defun my-minibuffer-setup-hook ()
+    (smartparens-mode -1)
+    (electric-pair-mode -1)
+    (subword-mode)
+    (setq gc-cons-threshold most-positive-fixnum))
+
+  (defun my-minibuffer-exit-hook ()
+    (electric-pair-mode +1)
+    (setq gc-cons-threshold 800000))
+
+  (add-hook 'minibuffer-setup-hook #'my-minibuffer-setup-hook)
+  (add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook))
+
+(use-package smartparens :ensure t)
 
 (use-package eval-expr
   :ensure t
@@ -2062,11 +2105,6 @@
 	 ("M-s M-N" . fancy-widen))
   :commands (fancy-narrow-to-region fancy-widen))
 
-(use-package exec-path-from-shell
-  :ensure t
-  :config
-  (exec-path-from-shell-initialize))
-
 (use-package wgrep :ensure t)
 
 (use-package string-edit :ensure t)
@@ -2085,16 +2123,23 @@
   ("M-/" . vr/replace))
 
 (use-package avy-zap
+  :ensure t
   :bind
   (("M-Z" . avy-zap-up-to-char-dwim)))
 
 (use-package backup-walker
+  :ensure t
   :commands backup-walker-start)
 
-(use-package centered-cursor-mode
-  :commands centered-cursor-mode)
+;; (use-package centered-cursor-mode
+;;   :ensure t
+;;   :hook
+;;   (prog-mode . centered-cursor-mode)
+;;   (text-mode . centered-cursor-mode)
+;;   (conf-mode . centered-cursor-mode))
 
 (use-package change-inner
+  :ensure t
   :bind (("M-i"	    . change-inner)
 	 ("M-o" . change-outer)
 	 ("s-i" . copy-inner)
@@ -2156,6 +2201,33 @@
     (subword-mode))
   (add-hook 'js2-mode-hook 'tj-js2-mode-hook))
 
+(use-package bm
+  :bind (("C-c b b" . bm-toggle)
+         ("C-c b n" . bm-next)
+         ("C-c b l" . bm-show-all)
+         ("C-c b p" . bm-previous))
+  :commands (bm-repository-load
+             bm-buffer-save
+             bm-buffer-save-all
+             bm-buffer-restore)
+  :ensure t
+  :init
+  (add-hook 'after-init-hook 'bm-repository-load)
+  (add-hook 'find-file-hooks 'bm-buffer-restore)
+  (add-hook 'after-revert-hook #'bm-buffer-restore)
+  (add-hook 'kill-buffer-hook #'bm-buffer-save)
+  (add-hook 'after-save-hook #'bm-buffer-save)
+  (add-hook 'vc-before-checkin-hook #'bm-buffer-save)
+  (add-hook 'kill-emacs-hook #'(lambda nil
+                                 (bm-buffer-save-all)
+                                 (bm-repository-save))))
+
+(use-package magit-todos
+  :ensure t
+  :config
+  (magit-todos-mode))
+
+
 (use-package terraform-mode
   :ensure t
   :config
@@ -2164,7 +2236,7 @@
 (use-package multifiles
   :ensure t
   :bind
-  ("C-!" . mf/mirror-region-in-multifiles))
+  ("C-!" . mf/mirror-region-in-multifile))
 
 (use-package toggle-quotes
   :ensure t

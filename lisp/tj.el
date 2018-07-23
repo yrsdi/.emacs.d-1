@@ -3,6 +3,7 @@
   (font-lock-mode -1))
 
 (add-hook 'prog-mode-hook 'disable-font-lock-mode)
+(add-hook 'protobuf-mode-hook 'disable-font-lock-mode)
 (add-hook 'text-mode-hook 'disable-font-lock-mode)
 (add-hook 'conf-mode-hook 'disable-font-lock-mode)
 (add-hook 'compilation-mode-hook 'disable-font-lock-mode)
@@ -18,7 +19,8 @@
 (set-frame-font (font-spec :family "Operator Mono" :size 14 :weight 'normal))
 
 ;; open help, ack, etc. in the same window
-(setq-default same-window-regexps '("."))
+;; (setq-default same-window-regexps '("."))
+(setq-default same-window-regexps nil)
 
 ;; Always load newest byte code
 (setq load-prefer-newer t)
@@ -158,10 +160,6 @@
   (end-of-line)
   (newline-and-indent))
 
-(defun tj-counsel-ag ()
-  (interactive)
-  (counsel-ag nil (projectile-project-root)))
-
 (defun tj-ag-regexp (string)
   (interactive "sSearch string: ")
   (ag-regexp string  (projectile-project-root)))
@@ -211,10 +209,6 @@
   (interactive)
   (find-file "~/.emacs.d/init.el"))
 
-(defun tj-only-buffer ()
-  (interactive)
-  (mapc 'kill-buffer (cdr (buffer-list (current-buffer)))))
-
 (defun tj-toggle-window-split ()
   (interactive)
   (if (= (count-windows) 2)
@@ -247,6 +241,11 @@
   (newline-and-indent))
 (global-set-key (kbd "<s-return>") 'tj-newline-and-indent)
 
+(defun tj-finder-here ()
+  "Open Finder here."
+  (interactive)
+  (shell-command "open -a Finder $PWD"))
+
 (defun tj-iterm-here ()
   "Open iTerm here."
   (interactive)
@@ -273,6 +272,14 @@
   (call-interactively #'comment-line)
   (unless (region-active-p) (forward-line -1)))
 
+(defun tj-kill-other-buffer ()
+  "Kill the other window's buffer."
+  (interactive)
+  (other-window 1)
+  (kill-buffer)
+  (other-window 1))
+(global-set-key (kbd "s-z") 'tj-kill-other-buffer)
+
 (global-set-key (kbd "M-;") 'tj-comment-line)
 
 (global-set-key (kbd "C-RET") 'other-window)
@@ -290,6 +297,8 @@
 
 ;; align code in a pretty way
 (global-set-key (kbd "C-x \\") #'align-regexp)
+
+(global-set-key (kbd "C-h C-f") #'find-function)
 
 ;; misc useful keybindings
 (global-set-key (kbd "s-<") #'beginning-of-buffer)
