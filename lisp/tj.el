@@ -2,6 +2,8 @@
   "Disable font lock mode."
   (font-lock-mode -1))
 
+(menu-bar-mode -1)
+
 (add-hook 'prog-mode-hook 'disable-font-lock-mode)
 (add-hook 'protobuf-mode-hook 'disable-font-lock-mode)
 (add-hook 'text-mode-hook 'disable-font-lock-mode)
