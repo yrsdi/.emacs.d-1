@@ -2251,5 +2251,9 @@
   \(fn arg char)"
   'interactive)
 
+(use-package server
+  :no-require
+  :hook (after-init . server-start))
+
 (when (file-exists-p custom-file)
   (load custom-file))
