@@ -1280,7 +1280,7 @@
 (use-package exec-path-from-shell
   :ensure t
   :config
-  (when (memq window-system '(mac ns))
+  (when (memq window-system '(mac ns x))
     (exec-path-from-shell-initialize)))
 
 (use-package move-text
@@ -2068,7 +2068,6 @@
 
   (defun tj-eshell-mode-hook ()
     (define-key eshell-mode-map (kbd "M-r") 'counsel-esh-history)
-    (setenv "PATH" (concat "/usr/local/go/bin:" "/usr/local/bin:" (getenv "PATH")))
     (setq eshell-path-env (concat "/usr/local/bin:" eshell-path-env)))
 
   (add-hook 'eshell-mode-hook 'tj-eshell-mode-hook)
