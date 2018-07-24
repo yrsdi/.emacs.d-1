@@ -38,8 +38,6 @@
 
 (setq use-package-verbose t)
 
-(use-package tj)
-
 (use-package visual-fill-column
   :ensure t
   :config
@@ -148,7 +146,6 @@
   :config
   (avy-setup-default)
   (setq avy-background t))
-
 
 (use-package ido
   :ensure t
@@ -1003,6 +1000,8 @@
   (setq uniquify-after-kill-buffer-p t)
   ;; don't muck with special buffers
   (setq uniquify-ignore-buffers-re "^\\*"))
+
+(use-package tj)
 
 ;; saveplace remembers your location in a file when saving files
 (require 'saveplace)

@@ -18,7 +18,12 @@
 
 (setq-default fill-column 100)
 
-(set-frame-font (font-spec :family "Operator Mono" :size 14 :weight 'normal))
+(when (memq window-system '(mac))
+  (set-frame-font (font-spec :family "Fira Code" :size 14 :weight 'normal)))
+
+(when (memq window-system '(x))
+  (set-face-attribute 'default nil :font "Fira Code")
+  (set-frame-font (font-spec :family "Fira Code" :size 13)))
 
 ;; open help, ack, etc. in the same window
 ;; (setq-default same-window-regexps '("."))
