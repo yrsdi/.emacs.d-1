@@ -23,7 +23,7 @@
 
 (when (memq window-system '(x))
   (set-face-attribute 'default nil :font "Fira Code")
-  (set-frame-font (font-spec :family "Fira Code" :size 13)))
+  (set-frame-font (font-spec :family "Fira Code" :size 12)))
 
 ;; open help, ack, etc. in the same window
 ;; (setq-default same-window-regexps '("."))
@@ -128,6 +128,7 @@
 	      (end-of-visible-line))
 	    (point)))))
 (global-set-key (kbd "C-c C-k") 'tj-kill-line-save)
+(global-set-key (kbd "s-l") 'goto-line)
 
 (defun tj-eshell (name)
   (interactive "sName: ")

@@ -785,6 +785,9 @@
 		(message (format "killed: %s" curinfo)))))))))
 
   (defun tj-go-hook ()
+    (setq imenu-generic-expression
+        '(("type" "^[ \t]*type *\\([^ \t\n\r\f]*[ \t]*\\(struct\\|interface\\)\\)" 1)
+          ("func" "^func *\\(.*\\)" 1)))
     (which-function-mode)
     (highlight-symbol-mode)
     (subword-mode)
@@ -2237,6 +2240,9 @@
 (use-package plain-theme
   :config
   (load-theme 'plain t))
+
+(use-package gist
+  :ensure t)
 
 (use-package unfill
   :ensure t
