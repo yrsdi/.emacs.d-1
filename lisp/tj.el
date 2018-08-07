@@ -303,6 +303,8 @@
 ;; replace buffer-menu with ibuffer
 (global-set-key (kbd "C-x C-b") #'ibuffer)
 
+(setq markdown-command "multimarkdown")
+
 ;; align code in a pretty way
 (global-set-key (kbd "C-x \\") #'align-regexp)
 
