@@ -2244,6 +2244,8 @@
 (use-package gist
   :ensure t)
 
+(require 'titlecase)
+
 (use-package unfill
   :ensure t
   :bind
