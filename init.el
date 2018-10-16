@@ -709,7 +709,6 @@
   :ensure t
   :diminish)
 
-
 (use-package go-eldoc
   :ensure t
   :diminish
@@ -1934,7 +1933,7 @@
                '(counsel-find-file . ivy--sort-files-by-date))
 
   :bind
-  (("s-t" . counsel-projectile-find-file)
+  (("C-\\" . counsel-projectile-find-file)
    ("C-c p f" . counsel-projectile-find-file)))
 
 (use-package github-browse-file
@@ -2237,12 +2236,29 @@
 (define-key occur-mode-map (kbd "n") 'next-line)
 (define-key occur-mode-map (kbd "p") 'previous-line)
 
+(use-package highlight-indentation
+  :ensure t
+  :config
+  (set-face-background 'highlight-indentation-face "#e3e3d3")
+  (set-face-background 'highlight-indentation-current-column-face "#c3b3b3")
+  (add-hook 'yaml-mode-hook 'highlight-indentation-mode)
+  (add-hook 'yaml-mode-hook 'highlight-indentation-current-column-mode))
+
+(use-package indent-tools
+  :ensure t
+  :config
+  (add-hook 'yaml-mode-hook 'indent-tools-minor-mode))
+
 (use-package plain-theme
   :config
   (load-theme 'plain t))
 
 (use-package gist
   :ensure t)
+
+(require 'resmacro)
+
+(global-set-key (kbd "C-x (") 'resmacro-start-macro)
 
 (require 'titlecase)
 

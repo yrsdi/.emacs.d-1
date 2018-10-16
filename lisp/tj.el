@@ -288,6 +288,16 @@
   (other-window 1))
 (global-set-key (kbd "s-z") 'tj-kill-other-buffer)
 
+(defun tj-toggle-fold ()
+  "Toggle fold all lines larger than indentation on current line"
+  (interactive)
+  (let ((col 1))
+    (save-excursion
+      (back-to-indentation)
+      (setq col (+ 1 (current-column)))
+      (set-selective-display
+       (if selective-display nil (or col 1))))))
+
 (global-set-key (kbd "M-;") 'tj-comment-line)
 
 (global-set-key (kbd "C-RET") 'other-window)
@@ -315,5 +325,35 @@
 (global-set-key (kbd "s->") #'end-of-buffer)
 (global-set-key (kbd "s-q") #'fill-paragraph)
 (global-set-key (kbd "s-x") #'execute-extended-command)
+
+(defun strip-convert-lines-into-one-big-string (beg end)
+"strip and convert selected lines into one big string which is copied into kill ring.
+When transient-mark-mode is enabled, if no region is active then only the
+current line is acted upon.
+
+If the region begins or ends in the middle of a line, that entire line is
+copied, even if the region is narrowed to the middle of a line.
+
+Current position is preserved."
+  (interactive "r")
+  (let (str (orig-pos (point-marker)))
+  (save-restriction
+    (widen)
+    (when (and transient-mark-mode (not (use-region-p)))
+      (setq beg (line-beginning-position)
+            end (line-beginning-position 2)))
+
+    (goto-char beg)
+    (setq beg (line-beginning-position))
+    (goto-char end)
+    (unless (= (point) (line-beginning-position))
+      (setq end (line-beginning-position 2)))
+
+    (goto-char beg)
+    (setq str (replace-regexp-in-string "[ \t]*\n" "" (replace-regexp-in-string "^[ \t]+" "" (buffer-substring-no-properties beg end))))
+    ;; (message "str=%s" str)
+    (kill-new str)
+    (goto-char orig-pos)))
+  )
 
 (provide 'tj)
