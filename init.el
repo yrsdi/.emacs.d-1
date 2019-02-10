@@ -117,6 +117,9 @@
 
 (add-hook 'after-init-hook #'init-subword)
 
+(setq auto-mode-alist
+      (cons '("\\.mod$" . text-mode) auto-mode-alist))
+
 (use-package lisp-mode
   :diminish
   :config
