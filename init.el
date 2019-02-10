@@ -183,11 +183,11 @@
   (setq auto-revert-buffer-list-filter
 	'magit-auto-revert-repository-buffers-p)
   (remove-hook 'magit-refs-sections-hook 'magit-insert-tags)
-  (setq vc-handled-backends nil)
+  ;; (setq vc-handled-backends '(Git))
   (setq magit-push-always-verify nil)
   (setq magit-refresh-status-buffer nil)
 
-  (magit-define-section-jumper magit-jump-to-pull-requests "Pull Requests" magithub-pull-requests-list)
+  ;; (magit-define-section-jumper magit-jump-to-pull-requests "Pull Requests" magithub-pull-requests-list)
   (magit-define-section-jumper magit-jump-to-recent-commits "Recent commits" recent "HEAD~10..HEAD")
 
   (define-key magit-status-mode-map "jpr" 'magit-jump-to-pull-requests)
@@ -254,7 +254,8 @@
   :config  (setq ivy-virtual-abbreviate 'full
                  ivy-rich-switch-buffer-align-virtual-buffer t)
   (setq ivy-rich-path-style 'abbrev)
-  (ivy-set-display-transformer 'ivy-switch-buffer 'ivy-rich-switch-buffer-transformer))
+  (ivy-set-display-transformer 'ivy-switch-buffer 'ivy-rich-switch-buffer-transformer)
+  (ivy-rich-mode))
 
 (use-package copy-as-format
   :ensure t
@@ -396,8 +397,9 @@
   ;; (dolist
   ;;	 (item magithub-confirmation)
   ;;   (magithub-confirm-set-default-behavior (car item) 'allow t))
-  :bind (:map magithub-issue-view-mode-map
-	      (("M-w" . tj-kill-issue-url))))
+  ;; :bind (:map magithub-issue-view-mode-map
+  ;;             (("M-w" . tj-kill-issue-url)))
+  )
 
 (use-package re-builder
   :bind (:map reb-mode-map
@@ -1027,15 +1029,15 @@
 	savehist-file (expand-file-name "savehist" savefile-dir))
   (savehist-mode +1))
 
-(use-package recentf
-  :config
-  (setq recentf-save-file (expand-file-name "recentf" savefile-dir)
-	recentf-max-saved-items 500
-	recentf-max-menu-items 15
-	;; disable recentf-cleanup on Emacs start, because it can cause
-	;; problems with remote files
-	recentf-auto-cleanup 'never)
-  (recentf-mode +1))
+;; (use-package recentf
+;;   :config
+;;   (setq recentf-save-file (expand-file-name "recentf" savefile-dir)
+;; 	recentf-max-saved-items 500
+;; 	recentf-max-menu-items 15
+;; 	;; disable recentf-cleanup on Emacs start, because it can cause
+;; 	;; problems with remote files
+;; 	recentf-auto-cleanup 'never)
+;;   (recentf-mode +1))
 
 (use-package windmove
   :config
@@ -1055,6 +1057,8 @@
   :commands (diffview-current diffview-region diffview-message))
 
 (use-package f :ensure t)
+
+
 
 (use-package dired
   :bind
