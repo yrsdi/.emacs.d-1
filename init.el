@@ -2250,6 +2250,7 @@
   (add-hook 'yaml-mode-hook 'indent-tools-minor-mode))
 
 (use-package plain-theme
+  :ensure t
   :config
   (load-theme 'plain t))
 
