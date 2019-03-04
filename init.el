@@ -1791,17 +1791,32 @@
   :config
   (which-key-mode +1))
 
-(use-package undo-tree
-  ;; jww (2017-12-10): This package often breaks the ability to "undo in
-  ;; region". Also, its backup files often get corrupted, so this sub-feature
-  ;; is disabled in settings.el.
-  :demand t
-  :bind ("M-_" . undo-tree-redo)
+;; (use-package undo-tree
+;;   ;; jww (2017-12-10): This package often breaks the ability to "undo in
+;;   ;; region". Also, its backup files often get corrupted, so this sub-feature
+;;   ;; is disabled in settings.el.
+;;   :demand t
+;;   :bind ("M-_" . undo-tree-redo)
+;;   :config
+;;   (setq undo-tree-history-directory-alist (quote ((".*" . "~/.cache/emacs/backups"))))
+;;   (setq undo-tree-mode-lighter "")
+;;   (setq undo-tree-visualizer-timestamps t)
+;;   (global-undo-tree-mode))
+
+(use-package undo-propose
+  :ensure t)
+
+
+(use-package goto-chg
+  :ensure t
+  :bind
+  (("C-." . goto-last-change)
+   ("C-," . goto-last-change-reverse)))
+
+(use-package undohist
+  :ensure t
   :config
-  (setq undo-tree-history-directory-alist (quote ((".*" . "~/.cache/emacs/backups"))))
-  (setq undo-tree-mode-lighter "")
-  (setq undo-tree-visualizer-timestamps t)
-  (global-undo-tree-mode))
+  (undohist-initialize))
 
 (use-package color-moccur
   :ensure t
