@@ -363,43 +363,43 @@
 	      (unless (eq ibuffer-sorting-mode 'alphabetic)
 		(ibuffer-do-sort-by-alphabetic)))))
 
-(use-package magithub
-  :ensure t
-  :config
-  (magithub-feature-autoinject t)
+;; (use-package magithub
+;;   :ensure t
+;;   :config
+;;   (magithub-feature-autoinject t)
 
-  (defun tj-kill-issue-url (issue-or-pr)
-    "Visits ISSUE-OR-PR in the browser.
-	   Interactively, this finds the issue at point."
-    (interactive (list (magithub-interactive-issue)))
-    (when-let* ((url (alist-get 'html_url issue-or-pr)))
-      (kill-new url)))
+  ;; (defun tj-kill-issue-url (issue-or-pr)
+  ;;   "Visits ISSUE-OR-PR in the browser.
+  ;; 	   Interactively, this finds the issue at point."
+  ;;   (interactive (list (magithub-interactive-issue)))
+  ;;   (when-let* ((url (alist-get 'html_url issue-or-pr)))
+  ;;     (kill-new url)))
 
-  (defun tj-visit-pull-request-url ()
-    "Visit the current branch's PR on Github."
-    (interactive)
-    (let ((repo (magit-get "remote" (magit-get-remote) "url")))
-      (if (not repo)
-	  (setq repo (magit-get "remote" (magit-get-push-remote) "url")))
-      (visit-gh-pull-request repo)))
+  ;; (defun tj-visit-pull-request-url ()
+  ;;   "Visit the current branch's PR on Github."
+  ;;   (interactive)
+  ;;   (let ((repo (magit-get "remote" (magit-get-remote) "url")))
+  ;;     (if (not repo)
+  ;; 	  (setq repo (magit-get "remote" (magit-get-push-remote) "url")))
+  ;;     (visit-gh-pull-request repo)))
 
-  (defun visit-gh-pull-request (repo)
-    "Visit the current branch's PR on Github."
-    (interactive)
-    (message repo)
-    (browse-url
-     (format "https://github.com/%s/pull/new/%s"
-	     (replace-regexp-in-string
-	      "\\`.+github\\.com:\\(.+\\)\\(\\.git\\)?\\'" "\\1"
-	      repo)
-	     (magit-get-current-branch))))
+  ;; (defun visit-gh-pull-request (repo)
+  ;;   "Visit the current branch's PR on Github."
+  ;;   (interactive)
+  ;;   (message repo)
+  ;;   (browse-url
+  ;;    (format "https://github.com/%s/pull/new/%s"
+  ;; 	     (replace-regexp-in-string
+  ;; 	      "\\`.+github\\.com:\\(.+\\)\\(\\.git\\)?\\'" "\\1"
+  ;; 	      repo)
+  ;; 	     (magit-get-current-branch))))
 
-  ;; (dolist
-  ;;	 (item magithub-confirmation)
-  ;;   (magithub-confirm-set-default-behavior (car item) 'allow t))
-  ;; :bind (:map magithub-issue-view-mode-map
-  ;;             (("M-w" . tj-kill-issue-url)))
-  )
+  ;; ;; (dolist
+  ;; ;;	 (item magithub-confirmation)
+  ;; ;;   (magithub-confirm-set-default-behavior (car item) 'allow t))
+  ;; ;; :bind (:map magithub-issue-view-mode-map
+  ;; ;;             (("M-w" . tj-kill-issue-url)))
+  ;; )
 
 (use-package re-builder
   :bind (:map reb-mode-map
@@ -714,17 +714,18 @@
   :ensure t
   :diminish)
 
-(use-package go-eldoc
-  :ensure t
-  :diminish
-  :defer t
-  :init
-  (add-hook 'go-mode-hook 'go-eldoc-setup))
+;; (use-package go-eldoc
+;;   :ensure t
+;;   :diminish
+;;   :defer t
+;;   :init
+;;   (add-hook 'go-mode-hook 'go-eldoc-setup))
 
 (use-package godoctor :ensure t)
 
 (use-package go-mode
   :ensure t
+
   :bind
   (:map go-mode-map
         ("M-j" . comment-indent-new-line)
@@ -737,10 +738,10 @@
 	("C-c C-t" . go-test-current-file)
 	("C-c g" . godoc)
 	;; ("C-c <C-m>" . tj-go-kill-doc)
-        ("C-c C-d" . go-guru-describe)
-	("M-." . go-guru-definition)
+        ("C-c C-d" . godef-describe)
+	("M-." . godef-jump)
         ("s-t" . counsel-projectile-find-file)
-	("C-," . go-guru-definition-other-window))
+	("C-," . godef-jump-other-window))
   :config
   (load "~/dev/src/github.com/stapelberg/expanderr/expanderr.el")
   (setq go-test-verbose t)
@@ -2295,6 +2296,29 @@
 
   \(fn arg char)"
   'interactive)
+
+;; (use-package lsp-mode
+;;   :ensure t
+;;   :hook
+;;   (lsp-mode . lsp-ui-mode)
+;;   (prog-mode . lsp)
+;;   :init
+;;   (setq lsp-auto-guess-root t))
+
+;; (use-package lsp-ui
+;;   :ensure t
+;;   :init
+;;   (setq lsp-ui-doc-enable nil
+;; 	lsp-ui-doc-include-signature t
+;; 	lsp-ui-doc-position 'at-point
+;; 	lsp-ui-sideline-enable nil
+;; 	lsp-ui-sideline-ignore-duplicate t)
+;;   )
+
+;; (use-package company-lsp
+;;   :ensure t
+;;   :config
+;;   (add-to-list 'company-backends 'company-lsp))
 
 (use-package server
   :no-require
