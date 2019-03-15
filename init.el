@@ -28,6 +28,8 @@
 
 (define-key 'help-command (kbd "C-i") #'info-display-manual)
 
+(set-frame-font "Operator Mono-14")
+
 ;; smart tab behavior - indent or complete
 (setq tab-always-indent 'complete)
 
@@ -49,8 +51,7 @@
   "Variable to hold line number from the last `ffap-file-at-point' call.")
 
 (defadvice ffap-file-at-point (after ffap-store-line-number activate)
-  "Search `ffap-string-at-point' for a line number pattern and
- save it in `ffap-file-at-point-line-number' variable."
+  "Search `ffap-string-at-point' for a line number pattern and save it in `ffap-file-at-point-line-number' variable."
   (let* ((string (ffap-string-at-point)) ;; string/name definition copied from `ffap-string-at-point'
 	 (name
 	  (or (condition-case nil
@@ -69,8 +70,7 @@
       (setq ffap-file-at-point-line-number nil))))
 
 (defadvice ffap-guesser (after ffap-store-line-number activate)
-  "Search `ffap-string-at-point' for a line number pattern and
- save it in `ffap-file-at-point-line-number' variable."
+  "Search `ffap-string-at-point' for a line number pattern and save it in `ffap-file-at-point-line-number' variable."
   (let* ((string (ffap-string-at-point)) ;; string/name definition copied from `ffap-string-at-point'
 	 (name
 	  (or (condition-case nil
@@ -638,9 +638,9 @@
 				     "input\\|base\\|area\\|col\\|"
 				     "frame\\|param\\)\\'")
 			     tag)
-	       (yas/expand-snippet (concat "<" tag " $1>$0")))
+	       (yas-expand-snippet (concat "<" tag " $1>$0")))
 	      (t
-	       (yas/expand-snippet
+	       (yas-expand-snippet
 		(if inserting-new-tag
 		    (concat "<${1:"
 			    tag
