@@ -18,6 +18,33 @@
 
 (define-key isearch-mode-map (kbd "C-o") #'isearch-occur)
 
+(define-key input-decode-map [?\C-m] [C-m])
+
+(eval-and-compile
+  (mapc #'(lambda (entry)
+            (define-prefix-command (cdr entry))
+            (bind-key (car entry) (cdr entry)))
+        '(("C-,"   . my-ctrl-comma-map)
+          ("<C-m>" . my-ctrl-m-map)
+
+          ("C-h e" . my-ctrl-h-e-map)
+          ("C-h x" . my-ctrl-h-x-map)
+
+          ("C-c b" . my-ctrl-c-b-map)
+          ("C-c e" . my-ctrl-c-e-map)
+          ("C-c m" . my-ctrl-c-m-map)
+          ("C-c w" . my-ctrl-c-w-map)
+          ("C-c y" . my-ctrl-c-y-map)
+          ("C-c H" . my-ctrl-c-H-map)
+          ("C-c N" . my-ctrl-c-N-map)
+          ("C-c (" . my-ctrl-c-open-paren-map)
+          ("C-c -" . my-ctrl-c-minus-map)
+          ("C-c =" . my-ctrl-c-equals-map)
+          ("C-c ." . my-ctrl-c-r-map)
+          )))
+
+(set-frame-font "Operator Mono Book-10")
+
 (define-key isearch-mode-map [(control return)]
   #'isearch-exit-other-end)
 (defun isearch-exit-other-end ()
@@ -530,7 +557,7 @@
    ("C-x b" . ivy-switch-buffer)
    ("C-x B" . ivy-switch-buffer-other-window))
   ("M-x".  counsel-M-x)
-  ("C-x C-f" . counsel-find-file)
+  ;; ("C-x C-f" . counsel-find-file)
   ("<f1> f" . counsel-describe-function)
   ("<f1> v" . counsel-describe-variable)
   ("<f1> l" . counsel-find-library)
@@ -1549,6 +1576,46 @@
   :bind (("<C-m> h"   . ace-mc-add-multiple-cursors)
 	 ("<C-m> M-h" . ace-mc-add-single-cursor)))
 
+(use-package multiple-cursors
+  :ensure t
+  :defer 5
+  :after selected
+  :preface
+
+  (defun reactivate-mark ()
+    (interactive)
+    (activate-mark))
+
+  :config
+  (add-to-list 'mc/cursor-specific-vars 'iy-go-to-char-start-pos)
+
+  :bind (
+         ("<C-m> <C-m>" . mc/edit-lines)
+         ("<C-m> C-SPC" . mc/mark-pop)
+         ("<C-m> C-e" . mc/edit-ends-of-lines)
+         ("<C-m> C-a" . mc/edit-beginnings-of-lines)
+         ("<C-m> a" . mc/mark-all-dwim)
+         ("<C-m> C-x" . reactivate-mark)
+         ("<C-m> C-SPC" . mc/mark-pop)
+         ("<C-m> <" . mc/mark-previous-like-this)
+         ("<C-m> >" . mc/mark-next-like-this)
+         ;; Extra multiple cursors stuff
+         ("<C-m> %" . mc/insert-numbers)
+         ("C-S-<mouse-1>" . mc/add-cursor-on-click))
+
+  :bind (:map selected-keymap
+              ("c"   . mc/edit-lines)
+              ("."   . mc/mark-next-like-this)
+              ("<"   . mc/unmark-next-like-this)
+              ("C->" . mc/skip-to-next-like-this)
+              (","   . mc/mark-previous-like-this)
+              (">"   . mc/unmark-previous-like-this)
+              ("C-<" . mc/skip-to-previous-like-this)
+              ("y"   . mc/mark-next-symbol-like-this)
+              ("Y"   . mc/mark-previous-symbol-like-this)
+              ("w"   . mc/mark-next-word-like-this)
+              ("W"   . mc/mark-previous-word-like-this)))
+
 (use-package mc-extras
   :ensure t
   :after multiple-cursors
@@ -1565,28 +1632,6 @@
   :bind (:map mc/keymap
               ("C-r" . phi-search-backward)
               ("C-s" . phi-search)))
-
-(use-package multiple-cursors
-  :ensure t
-  :defer 5
-  :after selected
-  :preface
-  (defun reactivate-mark ()
-    (interactive)
-    (activate-mark))
-  :config
-  (add-to-list 'mc/cursor-specific-vars 'iy-go-to-char-start-pos)
-  :bind (
-         ("<C-m> e" . mc/edit-lines)
-         ("<C-m> C-SPC" . mc/mark-pop)
-         ("<C-m> C-e" . mc/edit-ends-of-lines)
-         ("<C-m> C-a" . mc/edit-beginnings-of-lines)
-         ("<C-m> a" . mc/mark-all-dwim)
-         ("<C-m> <" . mc/mark-previous-like-this)
-         ("<C-m> >" . mc/mark-next-like-this)
-         ;; Extra multiple cursors stuff
-         ("<C-m> %" . mc/insert-numbers)
-         ("C-S-<mouse-1>" . mc/add-cursor-on-click)))
 
 (use-package ace-jump-mode
   :ensure t
@@ -1792,32 +1837,23 @@
   :config
   (which-key-mode +1))
 
-;; (use-package undo-tree
-;;   ;; jww (2017-12-10): This package often breaks the ability to "undo in
-;;   ;; region". Also, its backup files often get corrupted, so this sub-feature
-;;   ;; is disabled in settings.el.
-;;   :demand t
-;;   :bind ("M-_" . undo-tree-redo)
-;;   :config
-;;   (setq undo-tree-history-directory-alist (quote ((".*" . "~/.cache/emacs/backups"))))
-;;   (setq undo-tree-mode-lighter "")
-;;   (setq undo-tree-visualizer-timestamps t)
-;;   (global-undo-tree-mode))
+(use-package undo-tree
+  :demand t
+  :bind ("M-_" . undo-tree-redo)
+  :config
+  (setq undo-tree-history-directory-alist (quote ((".*" . "~/.cache/emacs/backups"))))
+  (setq undo-tree-mode-lighter "")
+  (setq undo-tree-visualizer-timestamps t)
+  (global-undo-tree-mode))
 
 (use-package undo-propose
   :ensure t)
-
 
 (use-package goto-chg
   :ensure t
   :bind
   (("C-." . goto-last-change)
    ("C-," . goto-last-change-reverse)))
-
-(use-package undohist
-  :ensure t
-  :config
-  (undohist-initialize))
 
 (use-package color-moccur
   :ensure t
@@ -2300,10 +2336,14 @@
 ;; (use-package lsp-mode
 ;;   :ensure t
 ;;   :hook
-;;   (lsp-mode . lsp-ui-mode)
 ;;   (prog-mode . lsp)
 ;;   :init
-;;   (setq lsp-auto-guess-root t))
+;;   (setq lsp-auto-guess-root t)
+;;   :config
+;;   (lsp-register-client
+;;    (make-lsp-client :new-connection (lsp-stdio-connection "gopls")
+;;                     :major-modes '(go-mode)
+;;                     :server-id 'gopls)))
 
 ;; (use-package lsp-ui
 ;;   :ensure t
@@ -2319,6 +2359,23 @@
 ;;   :ensure t
 ;;   :config
 ;;   (add-to-list 'company-backends 'company-lsp))
+
+(use-package vdiff
+  :ensure t)
+
+(use-package vdiff-magit
+  :ensure t)
+
+(use-package dot-mode
+  :ensure t
+  :config
+  (setq dot-mode-global-mode t)
+  (dot-mode))
+
+(use-package sqlformat
+  :ensure t
+  :hook
+  (sql-mode . sqlformat-on-save-mode))
 
 (use-package server
   :no-require
