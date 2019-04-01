@@ -55,7 +55,7 @@
 
 (define-key 'help-command (kbd "C-i") #'info-display-manual)
 
-(set-frame-font "Operator Mono-14")
+(set-frame-font "Hack-13")
 
 ;; smart tab behavior - indent or complete
 (setq tab-always-indent 'complete)
