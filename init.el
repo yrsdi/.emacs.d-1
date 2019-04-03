@@ -1796,6 +1796,20 @@
   :config
   (which-key-mode +1))
 
+;; backups
+
+(setq
+ backup-by-copying t
+ delete-old-versions t
+  kept-new-versions 10
+  kept-old-versions 2
+  vc-make-backup-files t
+  version-control t)
+
+(defun force-backup-of-buffer ()
+  (setq buffer-backed-up nil))
+
+(add-hook 'before-save-hook  'force-backup-of-buffer)
 
 (use-package undo-propose
   :ensure t)
