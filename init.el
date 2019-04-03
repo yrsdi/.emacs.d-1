@@ -1796,14 +1796,6 @@
   :config
   (which-key-mode +1))
 
-(use-package undo-tree
-  :demand t
-  :bind ("M-_" . undo-tree-redo)
-  :config
-  (setq undo-tree-history-directory-alist (quote ((".*" . "~/.cache/emacs/backups"))))
-  (setq undo-tree-mode-lighter "")
-  (setq undo-tree-visualizer-timestamps t)
-  (global-undo-tree-mode))
 
 (use-package undo-propose
   :ensure t)
