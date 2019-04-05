@@ -16,6 +16,8 @@
 (unless package-archive-contents
   (package-refresh-contents))
 
+(set-frame-font "Hack 10" nil t)
+
 (define-key isearch-mode-map (kbd "C-o") #'isearch-occur)
 
 (define-key input-decode-map [?\C-m] [C-m])
@@ -43,8 +45,6 @@
           ("C-c ." . my-ctrl-c-r-map)
           )))
 
-(set-frame-font "Operator Mono Book-10")
-
 (define-key isearch-mode-map [(control return)]
   #'isearch-exit-other-end)
 (defun isearch-exit-other-end ()
@@ -54,8 +54,6 @@
   (goto-char isearch-other-end))
 
 (define-key 'help-command (kbd "C-i") #'info-display-manual)
-
-(set-frame-font "Hack-13")
 
 ;; smart tab behavior - indent or complete
 (setq tab-always-indent 'complete)
@@ -214,12 +212,8 @@
   (setq magit-push-always-verify nil)
   (setq magit-refresh-status-buffer nil)
 
-  ;; (magit-define-section-jumper magit-jump-to-pull-requests "Pull Requests" magithub-pull-requests-list)
   (magit-define-section-jumper magit-jump-to-recent-commits "Recent commits" recent "HEAD~10..HEAD")
-
-  (define-key magit-status-mode-map "jpr" 'magit-jump-to-pull-requests)
   (define-key magit-status-mode-map "jrc" 'magit-jump-to-recent-commits)
-
 
   (defun tj-semaphore-open-branch ()
     "Open branch in Semaphore CI"
@@ -275,6 +269,9 @@
   (advice-add 'magit-key-mode :filter-args #'magit-key-mode--add-default-options)
   :ensure t
   :bind (("C-x g" . magit-status)))
+
+(use-package forge
+  :ensure t)
 
 (use-package ivy-rich
   :ensure t
@@ -389,44 +386,6 @@
 	      (ibuffer-projectile-set-filter-groups)
 	      (unless (eq ibuffer-sorting-mode 'alphabetic)
 		(ibuffer-do-sort-by-alphabetic)))))
-
-;; (use-package magithub
-;;   :ensure t
-;;   :config
-;;   (magithub-feature-autoinject t)
-
-  ;; (defun tj-kill-issue-url (issue-or-pr)
-  ;;   "Visits ISSUE-OR-PR in the browser.
-  ;; 	   Interactively, this finds the issue at point."
-  ;;   (interactive (list (magithub-interactive-issue)))
-  ;;   (when-let* ((url (alist-get 'html_url issue-or-pr)))
-  ;;     (kill-new url)))
-
-  ;; (defun tj-visit-pull-request-url ()
-  ;;   "Visit the current branch's PR on Github."
-  ;;   (interactive)
-  ;;   (let ((repo (magit-get "remote" (magit-get-remote) "url")))
-  ;;     (if (not repo)
-  ;; 	  (setq repo (magit-get "remote" (magit-get-push-remote) "url")))
-  ;;     (visit-gh-pull-request repo)))
-
-  ;; (defun visit-gh-pull-request (repo)
-  ;;   "Visit the current branch's PR on Github."
-  ;;   (interactive)
-  ;;   (message repo)
-  ;;   (browse-url
-  ;;    (format "https://github.com/%s/pull/new/%s"
-  ;; 	     (replace-regexp-in-string
-  ;; 	      "\\`.+github\\.com:\\(.+\\)\\(\\.git\\)?\\'" "\\1"
-  ;; 	      repo)
-  ;; 	     (magit-get-current-branch))))
-
-  ;; ;; (dolist
-  ;; ;;	 (item magithub-confirmation)
-  ;; ;;   (magithub-confirm-set-default-behavior (car item) 'allow t))
-  ;; ;; :bind (:map magithub-issue-view-mode-map
-  ;; ;;             (("M-w" . tj-kill-issue-url)))
-  ;; )
 
 (use-package re-builder
   :bind (:map reb-mode-map
@@ -1837,14 +1796,20 @@
   :config
   (which-key-mode +1))
 
-(use-package undo-tree
-  :demand t
-  :bind ("M-_" . undo-tree-redo)
-  :config
-  (setq undo-tree-history-directory-alist (quote ((".*" . "~/.cache/emacs/backups"))))
-  (setq undo-tree-mode-lighter "")
-  (setq undo-tree-visualizer-timestamps t)
-  (global-undo-tree-mode))
+;; backups
+
+(setq
+ backup-by-copying t
+ delete-old-versions t
+  kept-new-versions 10
+  kept-old-versions 2
+  vc-make-backup-files t
+  version-control t)
+
+(defun force-backup-of-buffer ()
+  (setq buffer-backed-up nil))
+
+(add-hook 'before-save-hook  'force-backup-of-buffer)
 
 (use-package undo-propose
   :ensure t)
@@ -2372,14 +2337,17 @@
   (setq dot-mode-global-mode t)
   (dot-mode))
 
+(use-package iedit
+  :ensure t)
+
 (use-package sqlformat
   :ensure t
   :hook
   (sql-mode . sqlformat-on-save-mode))
 
+(use-package github-review
+  :ensure t)
+
 (use-package server
   :no-require
   :hook (after-init . server-start))
-
-(when (file-exists-p custom-file)
-  (load custom-file))
