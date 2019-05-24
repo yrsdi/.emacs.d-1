@@ -170,6 +170,7 @@
   :ensure t
   :bind (("s-." . avy-goto-word-or-subword-1)
 	 ("s-," . avy-goto-char)
+         ("M-T" . avy-goto-word-1)
 	 ("<C-return>" . avy-goto-char-timer))
   :config
   (avy-setup-default)
@@ -237,7 +238,7 @@
        #'tj-semaphore-open-branch))
 
 
-  (remove-hook 'server-switch-hook 'magit-commit-diff)
+  ;; (remove-hook 'server-switch-hook 'magit-commit-diff)
 
   (defun tj-visit-pull-request-url ()
     "Visit the current branch's PR on Github."
@@ -712,6 +713,8 @@
 (use-package go-mode
   :ensure t
 
+  :init
+
   :bind
   (:map go-mode-map
         ("M-j" . comment-indent-new-line)
@@ -724,21 +727,30 @@
 	("C-c C-t" . go-test-current-file)
 	("C-c g" . godoc)
 	;; ("C-c <C-m>" . tj-go-kill-doc)
-        ("C-c C-d" . godef-describe)
-	("M-." . godef-jump)
+        ("C-c C-d" . lsp-describe-thing-at-point)
+	("M-." . lsp-find-definition)
         ("s-t" . counsel-projectile-find-file)
-	("C-," . godef-jump-other-window))
+	("C-," . tj-lsp-find-definition-other-window))
   :config
+
+  (defun tj-lsp-find-definition-other-window ()
+    "Split window vertically and use LSP to find the definition of the thing at point."
+    (interactive)
+    (split-window-vertically)
+    (lsp-find-definition))
+
   (load "~/dev/src/github.com/stapelberg/expanderr/expanderr.el")
   (setq go-test-verbose t)
   (setq gofmt-command "goimports")
   (setenv "GOPATH" (expand-file-name (concat (getenv "HOME") "/dev")))
   (setenv "GOROOT" "/usr/local/go")
-  (setq company-go-show-annotation t)
+  ;; (setq company-go-show-annotation t)
 
-  (use-package company-go
-  :ensure t
-  :defer t)
+  ;; (setq flycheck-go-megacheck-disabled-checkers '("staticcheck" "simple" "unused"))
+
+  ;; (use-package company-go
+  ;; :ensure t
+  ;; :defer t)
 
   (add-hook 'before-save-hook 'gofmt-before-save nil t)
 
@@ -787,7 +799,7 @@
     (electric-pair-mode)
     (selected-minor-mode 1)
     (font-lock-mode -1)
-    (setq company-backends '(company-go))
+    ;; (setq company-backends '(company-go))
     (go-guru-hl-identifier-mode)
     (if (not (string-match "go" compile-command))
 	(set (make-local-variable 'compile-command)
@@ -1297,6 +1309,20 @@
   :mode
   ("\\.markdown$" . markdown-mode)
   ("\\.md$" . markdown-mode)
+  :config
+  (defun tj-wrap-with-tags ()
+    (interactive)
+    (wrap-region-with-tag))
+
+  (defun tj-insert-author-tag ()
+    (interactive)
+    (insert "<author></author>")
+                    (backward-char 9))
+  :bind
+  (("C-c <C-m>" . tj-insert-author-tag)
+   ("C-c C-w" . tj-wrap-with-tags)
+   :map markdown-mode-map
+   ("C-c <" . tj-tml-insert-open-and-close-tag))
   :ensure t)
 
 (use-package yaml-mode
@@ -1591,6 +1617,8 @@
   :bind (:map mc/keymap
               ("C-r" . phi-search-backward)
               ("C-s" . phi-search)))
+
+
 
 (use-package ace-jump-mode
   :ensure t
@@ -1941,7 +1969,7 @@
   ;;   (interactive "sPKG: ")
   ;;   (let ((dir (f-join (getenv "GOPATH") "src" pkg)))
   ;;     (projectile-find-file-in-directory dir)))
-)
+  )
 
 (use-package counsel-projectile
   :ensure t
@@ -2298,32 +2326,32 @@
   \(fn arg char)"
   'interactive)
 
-;; (use-package lsp-mode
-;;   :ensure t
-;;   :hook
-;;   (prog-mode . lsp)
-;;   :init
-;;   (setq lsp-auto-guess-root t)
-;;   :config
-;;   (lsp-register-client
-;;    (make-lsp-client :new-connection (lsp-stdio-connection "gopls")
-;;                     :major-modes '(go-mode)
-;;                     :server-id 'gopls)))
+(use-package lsp-mode
+  :ensure t
+  :hook
+  (prog-mode . lsp)
+  :init
+  (setq lsp-auto-guess-root t)
+  :config
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-stdio-connection "gopls")
+                    :major-modes '(go-mode)
+                    :server-id 'gopls)))
 
-;; (use-package lsp-ui
-;;   :ensure t
-;;   :init
-;;   (setq lsp-ui-doc-enable nil
-;; 	lsp-ui-doc-include-signature t
-;; 	lsp-ui-doc-position 'at-point
-;; 	lsp-ui-sideline-enable nil
-;; 	lsp-ui-sideline-ignore-duplicate t)
-;;   )
+(use-package lsp-ui
+  :ensure t
+  :init
+  (setq lsp-ui-doc-enable nil
+	lsp-ui-doc-include-signature t
+	lsp-ui-doc-position 'at-point
+	lsp-ui-sideline-enable nil
+	lsp-ui-sideline-ignore-duplicate t)
+  )
 
-;; (use-package company-lsp
-;;   :ensure t
-;;   :config
-;;   (add-to-list 'company-backends 'company-lsp))
+(use-package company-lsp
+  :ensure t
+  :config
+  (add-to-list 'company-backends 'company-lsp))
 
 (use-package vdiff
   :ensure t)
