@@ -736,7 +736,7 @@
   (defun tj-lsp-find-definition-other-window ()
     "Split window vertically and use LSP to find the definition of the thing at point."
     (interactive)
-    (split-window-vertically)
+    (split-window-horizontally)
     (lsp-find-definition))
 
   (load "~/dev/src/github.com/stapelberg/expanderr/expanderr.el")
@@ -1288,7 +1288,8 @@
   :ensure t
   :config
   (when (memq window-system '(mac ns x))
-    (exec-path-from-shell-initialize)))
+    (exec-path-from-shell-initialize)
+    (set-frame-font "Hack 14" nil t)))
 
 (use-package move-text
   :ensure t
