@@ -168,8 +168,7 @@
 
 (use-package avy
   :ensure t
-  :bind (("s-." . avy-goto-word-or-subword-1)
-	 ("s-," . avy-goto-char)
+  :bind (
          ("M-T" . avy-goto-word-1)
 	 ("<C-return>" . avy-goto-char-timer))
   :config
@@ -403,9 +402,9 @@
 
 
 
-(use-package dockerfile-mode
-  :ensure t
-  :mode "Dockerfile[a-zA-Z.-]*\\'")
+;; (use-package dockerfile-mode
+;;   :ensure t
+;;   :mode "Dockerfile[a-zA-Z.-]*\\'")
 
 (use-package edit-indirect
   :ensure t
@@ -730,7 +729,7 @@
         ("C-c C-d" . lsp-describe-thing-at-point)
 	("M-." . lsp-find-definition)
         ("s-t" . counsel-projectile-find-file)
-	("C-," . tj-lsp-find-definition-other-window))
+	("s-." . tj-lsp-find-definition-other-window))
   :config
 
   (defun tj-lsp-find-definition-other-window ()
@@ -1288,7 +1287,9 @@
   :ensure t
   :config
   (when (memq window-system '(mac ns x))
-    (exec-path-from-shell-initialize)
+    (exec-path-from-shell-initialize))
+
+  (when (memq window-system '(mac ns))
     (set-frame-font "Hack 14" nil t)))
 
 (use-package move-text
@@ -1770,7 +1771,8 @@
     (add-to-list 'exec-path "C:/Program Files (x86)/Aspell/bin/"))
   (setq ispell-program-name "aspell" ; use aspell instead of ispell
 	ispell-extra-args '("--sug-mode=ultra"))
-  (add-hook 'text-mode-hook #'flyspell-mode))
+  (add-hook 'text-mode-hook #'flyspell-mode)
+  (add-hook 'prog-mode-hook #'flyspell-prog-mode))
 
 (use-package flycheck
   :ensure t
