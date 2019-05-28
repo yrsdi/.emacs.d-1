@@ -2197,8 +2197,18 @@
 	 . (lambda ()
 	     (subword-mode)
 	     (electric-pair-mode)
+             (tj-protobuf-imenu-configure)
 	     (c-add-style "tj-protobuf-style" tj-protobuf-style t)))
   :config
+
+  (setq tj-protobuf-imenu-generic-expression
+        '(("Message" "^message *\\([a-zA-Z0-9_]+\\)" 1)
+          ("Service" "^service *\\([a-zA-Z0-9_]+\\)" 1)))
+
+  (defun tj-protobuf-imenu-configure ()
+    (interactive)
+    (setq imenu-generic-expression tj-protobuf-imenu-generic-expression))
+
   (progn
     (defconst tj-protobuf-style
       '((c-basic-offset . 2)
