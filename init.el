@@ -209,8 +209,8 @@
 	'magit-auto-revert-repository-buffers-p)
   (remove-hook 'magit-refs-sections-hook 'magit-insert-tags)
   ;; (setq vc-handled-backends '(Git))
-  (setq magit-push-always-verify nil)
-  (setq magit-refresh-status-buffer nil)
+  ;; (setq magit-push-always-verify nil)
+  (setq magit-refresh-status-buffer t)
 
   (magit-define-section-jumper magit-jump-to-recent-commits "Recent commits" recent "HEAD~10..HEAD")
   (define-key magit-status-mode-map "jrc" 'magit-jump-to-recent-commits)
@@ -270,6 +270,9 @@
   :ensure t
   :bind (("C-x g" . magit-status)))
 
+(use-package magit-diff-flycheck
+  :ensure t)
+
 (use-package forge
   :ensure t)
 
@@ -297,14 +300,11 @@
   :init
   (require 'grep)
   :no-require
-
   :bind (("C-c c" . compile)
          ("M-O"   . show-compilation))
-
   :bind (:map compilation-mode-map
               (("z" . delete-window)
-               ("RET" . tj-compile-goto-error-same-window)
-               ))
+               ("RET" . tj-compile-goto-error-same-window)))
   :bind (:map compilation-minor-mode-map
               ("RET" . tj-compile-goto-error-same-window))
   :bind (:map compilation-button-map
@@ -402,10 +402,6 @@
 
 
 
-;; (use-package dockerfile-mode
-;;   :ensure t
-;;   :mode "Dockerfile[a-zA-Z.-]*\\'")
-
 (use-package edit-indirect
   :ensure t
   :bind (("C-c '" . edit-indirect-region)))
@@ -431,6 +427,18 @@
 
 (use-package ediff
   :ensure t
+  :config
+
+  (defun ediff-copy-both-to-C ()
+    (interactive)
+    (ediff-copy-diff ediff-current-difference nil 'C nil
+                     (concat
+                      (ediff-get-region-contents ediff-current-difference 'A ediff-control-buffer)
+                      (ediff-get-region-contents ediff-current-difference 'B ediff-control-buffer))))
+
+  (defun add-d-to-ediff-mode-map () (define-key ediff-mode-map "d" 'ediff-copy-both-to-C))
+  (add-hook 'ediff-keymap-setup-hook 'add-d-to-ediff-mode-map)
+
   :bind (("M-s = b" . ediff-buffers)
 	 ("M-s = B" . ediff-buffers3)
 	 ("M-s = c" . compare-windows)
@@ -442,6 +450,7 @@
 	 ("M-s = P" . ediff-patch-buffer)
 	 ("M-s = l" . ediff-regions-linewise)
 	 ("M-s = w" . ediff-regions-wordwise))
+
   :init
   (setq ediff-split-window-function 'split-window-horizontally)
   (setq ediff-merge-split-window-function 'split-window-horizontally))
@@ -544,7 +553,7 @@
 
 (use-package company-tern
   :ensure t
-   :defer t
+  :defer t
   :init
   (with-eval-after-load 'company
     (add-to-list 'company-backends 'company-tern)))
@@ -722,21 +731,35 @@
 	("M-f" . subword-forward)
 	("M-d" . subword-kill)
 	("C-c C-r" . godoctor-rename)
-	("C-c C-c" . godoc-at-point)
 	("C-c C-t" . go-test-current-file)
+	("C-c M-t" . go-test-current-test)
 	("C-c g" . godoc)
 	;; ("C-c <C-m>" . tj-go-kill-doc)
-        ("C-c C-d" . lsp-describe-thing-at-point)
+        ("C-c C-c" . lsp-describe-thing-at-point)
 	("M-." . lsp-find-definition)
         ("s-t" . counsel-projectile-find-file)
-	("s-." . tj-lsp-find-definition-other-window))
+	("s-." . godef-jump-other-window))
   :config
 
   (defun tj-lsp-find-definition-other-window ()
     "Split window vertically and use LSP to find the definition of the thing at point."
     (interactive)
-    (split-window-horizontally)
+    (switch-to-buffer-other-window (buffer-name))
     (lsp-find-definition))
+
+  ;; override this func for testify
+  (defun go-test-current-test ()
+    "Launch go test on the current test."
+    (interactive)
+    (cl-destructuring-bind (test-suite test-name) (go-test--get-current-test-info)
+      (let ((test-flag (if (> (length test-suite) 0) "-testify.m " "-run "))
+            (additional-arguments (if go-test-additional-arguments-function
+                                      (funcall go-test-additional-arguments-function
+                                               test-suite test-name) "")))
+        (when test-name
+          (if (go-test--is-gb-project)
+              (go-test--gb-start (s-concat "-test.v=true -test.run=" test-name "\\$ ."))
+            (go-test--go-test (s-concat test-flag test-name additional-arguments "\\$ .")))))))
 
   (load "~/dev/src/github.com/stapelberg/expanderr/expanderr.el")
   (setq go-test-verbose t)
@@ -748,8 +771,8 @@
   ;; (setq flycheck-go-megacheck-disabled-checkers '("staticcheck" "simple" "unused"))
 
   ;; (use-package company-go
-  ;; :ensure t
-  ;; :defer t)
+  ;;   :ensure t
+  ;;   :defer t)
 
   (add-hook 'before-save-hook 'gofmt-before-save nil t)
 
@@ -757,7 +780,7 @@
 
   (setq-local compilation-read-command nil)
 
-  (defun tj-go-find-file ()
+  (defun tj-find-file-go ()
     "Find file under $GOROOT."
     (interactive)
     (find-file "/usr/local/go/src/"))
@@ -788,8 +811,8 @@
 
   (defun tj-go-hook ()
     (setq imenu-generic-expression
-        '(("type" "^[ \t]*type *\\([^ \t\n\r\f]*[ \t]*\\(struct\\|interface\\)\\)" 1)
-          ("func" "^func *\\(.*\\)" 1)))
+          '(("type" "^[ \t]*type *\\([^ \t\n\r\f]*[ \t]*\\(struct\\|interface\\)\\)" 1)
+            ("func" "^func *\\(.*\\)" 1)))
     (which-function-mode)
     (highlight-symbol-mode)
     (subword-mode)
@@ -850,6 +873,12 @@
    ("M-s M-s" . iy-go-to-or-up-to-continue)
    ("M-s M-S" . iy-go-to-or-up-to-continue-backward)))
 
+(use-package ido-completing-read+
+  :ensure t
+  :config
+  (ido-ubiquitous-mode))
+
+
 (use-package bm
   :ensure t
   :bind (("M-s b" . bm-toggle)
@@ -875,7 +904,7 @@
 
   (setq projectile-indexing-method 'alien)
   (setq projectile-mode-line nil)
-   (setq projectile-sort-order 'modification-time)
+  (setq projectile-sort-order 'modification-time)
   ;; (setq projectile-sort-order 'default)
 
   ;; Fix the issue where the older project name is prepended to 'Find File:'
@@ -1255,15 +1284,6 @@
 	      ("X" . dired-ranger-move)
 	      ("Y" . dired-ranger-paste)))
 
-(use-package docker
-  :defer 15
-  :diminish
-  :config
-  (require 'docker-images)
-  (require 'docker-containers)
-  (require 'docker-volumes)
-  (require 'docker-networks))
-
 (use-package sh-mode
   :init
   (setq sh-basic-offset 2)
@@ -1319,7 +1339,7 @@
   (defun tj-insert-author-tag ()
     (interactive)
     (insert "<author></author>")
-                    (backward-char 9))
+    (backward-char 9))
   :bind
   (("C-c <C-m>" . tj-insert-author-tag)
    ("C-c C-w" . tj-wrap-with-tags)
@@ -1832,10 +1852,10 @@
 (setq
  backup-by-copying t
  delete-old-versions t
-  kept-new-versions 10
-  kept-old-versions 2
-  vc-make-backup-files t
-  version-control t)
+ kept-new-versions 10
+ kept-old-versions 2
+ vc-make-backup-files t
+ version-control t)
 
 (defun force-backup-of-buffer ()
   (setq buffer-backed-up nil))
@@ -1928,8 +1948,8 @@
   :config
 
   (defun tj-counsel-ag ()
-  (interactive)
-  (counsel-ag nil (projectile-project-root)))
+    (interactive)
+    (counsel-ag nil (projectile-project-root)))
   (setq counsel-find-file-at-point t)
   :bind
   (("C-*"     . counsel-org-agenda-headlines)
@@ -2344,21 +2364,16 @@
   :hook
   (prog-mode . lsp)
   :init
-  (setq lsp-auto-guess-root t)
-  :config
-  (lsp-register-client
-   (make-lsp-client :new-connection (lsp-stdio-connection "gopls")
-                    :major-modes '(go-mode)
-                    :server-id 'gopls)))
+  (setq lsp-auto-guess-root t))
 
 (use-package lsp-ui
   :ensure t
   :init
-  (setq lsp-ui-doc-enable nil
-	lsp-ui-doc-include-signature t
-	lsp-ui-doc-position 'at-point
-	lsp-ui-sideline-enable nil
-	lsp-ui-sideline-ignore-duplicate t)
+   (setq lsp-ui-doc-enable nil
+         lsp-ui-doc-include-signature t
+         lsp-ui-doc-position 'at-point
+         lsp-ui-sideline-enable nil
+         lsp-ui-sideline-ignore-duplicate t)
   )
 
 (use-package company-lsp
