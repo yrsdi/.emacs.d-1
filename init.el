@@ -766,13 +766,6 @@
   (setq gofmt-command "goimports")
   (setenv "GOPATH" (expand-file-name (concat (getenv "HOME") "/dev")))
   (setenv "GOROOT" "/usr/local/go")
-  ;; (setq company-go-show-annotation t)
-
-  ;; (setq flycheck-go-megacheck-disabled-checkers '("staticcheck" "simple" "unused"))
-
-  ;; (use-package company-go
-  ;;   :ensure t
-  ;;   :defer t)
 
   (add-hook 'before-save-hook 'gofmt-before-save nil t)
 
@@ -973,6 +966,8 @@
 (global-set-key (kbd "C-c c") #'embrace-commander)
 
 (use-package web-beautify :ensure t)
+
+(use-package deadgrep :ensure t)
 
 (use-package whitespace
   :diminish
@@ -1950,6 +1945,7 @@
   (defun tj-counsel-ag ()
     (interactive)
     (counsel-ag nil (projectile-project-root)))
+
   (setq counsel-find-file-at-point t)
   :bind
   (("C-*"     . counsel-org-agenda-headlines)
@@ -1986,13 +1982,7 @@
                (thing-at-point 'filename)))
          (dir (f-join (getenv "GOPATH") "src" pkg))
          (search (read-string "Search string: ")))
-      (ag search dir)))
-
-  ;; (defun projectile-go-pkg (pkg)
-  ;;   (interactive "sPKG: ")
-  ;;   (let ((dir (f-join (getenv "GOPATH") "src" pkg)))
-  ;;     (projectile-find-file-in-directory dir)))
-  )
+      (ag search dir))))
 
 (use-package counsel-projectile
   :ensure t
@@ -2194,13 +2184,6 @@
 (use-package backup-walker
   :ensure t
   :commands backup-walker-start)
-
-;; (use-package centered-cursor-mode
-;;   :ensure t
-;;   :hook
-;;   (prog-mode . centered-cursor-mode)
-;;   (text-mode . centered-cursor-mode)
-;;   (conf-mode . centered-cursor-mode))
 
 (use-package change-inner
   :ensure t
