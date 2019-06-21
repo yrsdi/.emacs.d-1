@@ -42,21 +42,7 @@
           ("C-c (" . my-ctrl-c-open-paren-map)
           ("C-c -" . my-ctrl-c-minus-map)
           ("C-c =" . my-ctrl-c-equals-map)
-          ("C-c ." . my-ctrl-c-r-map)
-          )))
-
-(define-key isearch-mode-map [(control return)]
-  #'isearch-exit-other-end)
-(defun isearch-exit-other-end ()
-  "Exit isearch, at the opposite end of the string."
-  (interactive)
-  (isearch-exit)
-  (goto-char isearch-other-end))
-
-(define-key 'help-command (kbd "C-i") #'info-display-manual)
-
-;; smart tab behavior - indent or complete
-(setq tab-always-indent 'complete)
+          ("C-c ." . my-ctrl-c-r-map))))
 
 (unless (package-installed-p 'use-package)
   (package-install 'use-package))
@@ -70,80 +56,6 @@
   :config
   (add-hook 'visual-line-mode-hook #'visual-fill-column-mode)
   (add-hook 'markdown-mode-hook 'visual-line-mode))
-
-;; improve find file at point to handle line numbers
-(defvar ffap-file-at-point-line-number nil
-  "Variable to hold line number from the last `ffap-file-at-point' call.")
-
-(defadvice ffap-file-at-point (after ffap-store-line-number activate)
-  "Search `ffap-string-at-point' for a line number pattern and save it in `ffap-file-at-point-line-number' variable."
-  (let* ((string (ffap-string-at-point)) ;; string/name definition copied from `ffap-string-at-point'
-	 (name
-	  (or (condition-case nil
-		  (and (not (string-match "//" string)) ; foo.com://bar
-		       (substitute-in-file-name string))
-		(error nil))
-	      string))
-	 (line-number-string
-	  (and (string-match ":[0-9]+" name)
-	       (substring name (1+ (match-beginning 0)) (match-end 0))))
-	 (line-number
-	  (and line-number-string
-	       (string-to-number line-number-string))))
-    (if (and line-number (> line-number 0))
-	(setq ffap-file-at-point-line-number line-number)
-      (setq ffap-file-at-point-line-number nil))))
-
-(defadvice ffap-guesser (after ffap-store-line-number activate)
-  "Search `ffap-string-at-point' for a line number pattern and save it in `ffap-file-at-point-line-number' variable."
-  (let* ((string (ffap-string-at-point)) ;; string/name definition copied from `ffap-string-at-point'
-	 (name
-	  (or (condition-case nil
-		  (and (not (string-match "//" string)) ; foo.com://bar
-		       (substitute-in-file-name string))
-		(error nil))
-	      string))
-	 (line-number-string
-	  (and (string-match ":[0-9]+" name)
-	       (substring name (1+ (match-beginning 0)) (match-end 0))))
-	 (line-number
-	  (and line-number-string
-	       (string-to-number line-number-string))))
-    (if (and line-number (> line-number 0))
-	(setq ffap-file-at-point-line-number line-number)
-      (setq ffap-file-at-point-line-number nil))))
-
-(defadvice find-file (after ffap-goto-line-number activate)
-  "If `ffap-file-at-point-line-number' is non-nil goto this line."
-  (when ffap-file-at-point-line-number
-    (with-no-warnings (goto-line ffap-file-at-point-line-number))
-    (setq ffap-file-at-point-line-number nil)))
-
-(defadvice find-file-at-point (after ffap-goto-line-number activate)
-  "If `ffap-file-at-point-line-number' is non-nil goto this line."
-  (when ffap-file-at-point-line-number
-    (with-no-warnings (goto-line ffap-file-at-point-line-number))
-    (setq ffap-file-at-point-line-number nil)))
-
-(defun init-subword ()
-  (let ((adv (cons 'advice
-		   (lambda ()
-		     (let ((os (char-syntax ?_)))
-		       (modify-syntax-entry ?_ "_")
-		       ad-do-it
-		       (modify-syntax-entry ?_ (string os))))))
-	(fun '(subword-forward subword-kill subword-backward
-			       subword-backward-kill subword-downcase subword-upcase
-			       subword-transpose)))
-    (dolist (f fun)
-      (ad-add-advice f (list 'underscore-wrap nil t adv)
-		     'around 'last)
-      (ad-activate f))))
-
-(add-hook 'after-init-hook #'init-subword)
-
-(setq auto-mode-alist
-      (cons '("\\.mod$" . text-mode) auto-mode-alist))
 
 (use-package lisp-mode
   :diminish
@@ -710,19 +622,8 @@
   :ensure t
   :diminish)
 
-;; (use-package go-eldoc
-;;   :ensure t
-;;   :diminish
-;;   :defer t
-;;   :init
-;;   (add-hook 'go-mode-hook 'go-eldoc-setup))
-
-(use-package godoctor :ensure t)
-
 (use-package go-mode
   :ensure t
-
-  :init
 
   :bind
   (:map go-mode-map
@@ -741,6 +642,12 @@
         ("s-t" . counsel-projectile-find-file)
 	("s-." . godef-jump-other-window))
   :config
+
+  (use-package go-eldoc
+    :ensure t
+    :diminish)
+
+  (use-package godoctor :ensure t)
 
   (defun tj-lsp-find-definition-other-window ()
     "Split window vertically and use LSP to find the definition of the thing at point."
@@ -811,6 +718,7 @@
     (highlight-symbol-mode)
     (subword-mode)
     (flycheck-mode)
+    (go-eldoc-setup)
     (electric-indent-mode)
     (electric-pair-mode)
     (selected-minor-mode 1)
@@ -2353,11 +2261,11 @@
 (use-package lsp-ui
   :ensure t
   :init
-   (setq lsp-ui-doc-enable nil
-         lsp-ui-doc-include-signature t
-         lsp-ui-doc-position 'at-point
-         lsp-ui-sideline-enable nil
-         lsp-ui-sideline-ignore-duplicate t)
+  (setq lsp-ui-doc-enable nil
+        lsp-ui-doc-include-signature t
+        lsp-ui-doc-position 'at-point
+        lsp-ui-sideline-enable nil
+        lsp-ui-sideline-ignore-duplicate t)
   )
 
 (use-package company-lsp
@@ -2391,17 +2299,3 @@
 (use-package server
   :no-require
   :hook (after-init . server-start))
-
-(defun tj-spongebob (start end)
-  "Convert string from START to END to SpOnGeBoB meme."
-  (interactive "r")
-  (save-excursion
-    (goto-char start)
-    (let ((upcase nil))
-      (while (not (eq end (point)))
-        (let* ((upcase (not upcase))
-               (curchar (char-after))
-               (newchar (if upcase (upcase curchar) (downcase curchar))))
-          (delete-char 1)
-          (insert-char newchar)
-          (forward-char 1))))))
