@@ -643,9 +643,9 @@
 	("s-." . godef-jump-other-window))
   :config
 
-  (use-package go-eldoc
-    :ensure t
-    :diminish)
+  ;; (use-package go-eldoc
+  ;;   :ensure t
+  ;;   :diminish)
 
   (use-package godoctor :ensure t)
 
