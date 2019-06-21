@@ -210,6 +210,7 @@
   (remove-hook 'magit-refs-sections-hook 'magit-insert-tags)
   ;; (setq vc-handled-backends '(Git))
   ;; (setq magit-push-always-verify nil)
+  (setq vc-follow-symlinks t)
   (setq magit-refresh-status-buffer t)
 
   (magit-define-section-jumper magit-jump-to-recent-commits "Recent commits" recent "HEAD~10..HEAD")
@@ -2390,3 +2391,17 @@
 (use-package server
   :no-require
   :hook (after-init . server-start))
+
+(defun tj-spongebob (start end)
+  "Convert string from START to END to SpOnGeBoB meme."
+  (interactive "r")
+  (save-excursion
+    (goto-char start)
+  (let ((upcase nil))
+    (dotimes (n (- end start 1))
+      (let* ((upcase (not upcase))
+             (curchar (char-after))
+             (newchar (if upcase (upcase curchar) (downcase curchar))))
+        (delete-char 1)
+        (insert-char newchar)
+        (forward-char 1))))))
