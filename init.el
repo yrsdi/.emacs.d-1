@@ -117,6 +117,8 @@
   :bind (:map magit-diff-mode-map
 	      (("C-o" . magit-diff-visit-file-other-window)))
   :config
+  (add-hook 'after-save-hook 'magit-after-save-refresh-status)
+
   (setq auto-revert-buffer-list-filter
 	'magit-auto-revert-repository-buffers-p)
   (remove-hook 'magit-refs-sections-hook 'magit-insert-tags)
@@ -601,15 +603,6 @@
   ("C-c >" . tj-rb-insert-or-toggle-erb-tag)
   ("C-c <" . tj-tml-insert-open-and-close-tag))
 
-(use-package ag
-  :ensure t
-  :config
-  (defun tj-ag-here (arg)
-    (interactive "sSearch string: ")
-    (ag-regexp arg default-directory))
-
-  (global-set-key (kbd "C-c C-a") 'ag-regexp))
-
 (use-package company-quickhelp
   :ensure t
   :defer t
@@ -844,7 +837,7 @@
   (def-projectile-commander-method ?e "Open eshell in root directory." (call-interactively 'projectile-run-eshell))
   (def-projectile-commander-method ?! "Run shell command in root directory." (call-interactively 'projectile-run-async-shell-command-in-root))
   (def-projectile-commander-method ?m "Run shell command in root directory." (call-interactively 'projectile-run-async-shell-command-in-root))
-  (def-projectile-commander-method ?a "Run ag in the project." (let ((current-prefix-arg 1)) (call-interactively 'projectile-ag)))
+  (def-projectile-commander-method ?a "Run deadgrep in the project." (let ((current-prefix-arg 1)) (call-interactively 'counsel-projectile-rg)))
   (def-projectile-commander-method ?A "Run ack in the project." (let ((current-prefix-arg 1)) (call-interactively 'ack)))
   (def-projectile-commander-method ?c "Compile project." (call-interactively 'projectile-compile-project))
   (def-projectile-commander-method ?d "Open project root in dired." (call-interactively 'projectile-dired))
@@ -1865,7 +1858,7 @@
    ("M-x"     . counsel-M-x)
    ("C-x <C-m>"     . counsel-M-x)
    ("M-s f"     . tj-counsel-ag)
-   ("M-s a"     . tj-ag-regexp)
+   ("M-s a"     . deadgrep)
    ("C-c i" . counsel-imenu)
    ("M-y" . counsel-yank-pop)
    ("M-s j" . counsel-dired-jump)
@@ -2288,6 +2281,8 @@
 (use-package iedit
   :ensure t)
 
+(use-package frog-jump-buffer :ensure t)
+
 (use-package sqlformat
   :ensure t
   :hook
@@ -2295,6 +2290,21 @@
 
 (use-package github-review
   :ensure t)
+
+(use-package vterm
+  :ensure t
+  :custom (vterm-install t)
+  :config
+  (defun vterm--rename-buffer-as-title (title)
+    (when (ignore-errors (file-directory-p title))
+      (cd-absolute title))
+    (rename-buffer (format "term %s" title)))
+  (add-hook 'vterm-set-title-functions 'vterm--rename-buffer-as-title)
+
+  :hook
+  (vterm-mode . disable-font-lock-mode))
+
+
 
 (use-package server
   :no-require
