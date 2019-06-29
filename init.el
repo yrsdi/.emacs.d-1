@@ -631,7 +631,7 @@
 	("C-c g" . godoc)
 	;; ("C-c <C-m>" . tj-go-kill-doc)
         ("C-c C-c" . lsp-describe-thing-at-point)
-	("M-." . lsp-find-definition)
+	("M-." . godef-jump)
         ("s-t" . counsel-projectile-find-file)
 	("s-." . godef-jump-other-window))
   :config
@@ -2244,10 +2244,26 @@
   \(fn arg char)"
   'interactive)
 
+
 (use-package lsp-mode
   :ensure t
+  :config
+  (cl-defun lsp-find-locations (method &optional extra &key display-action)
+  "Send request named METHOD and get cross references of the symbol under point.
+EXTRA is a plist of extra parameters."
+  (if-let ((loc (lsp-request method
+                          (append (lsp--text-document-position-params) extra))))
+      (let ((xrefs (lsp--locations-to-xref-items (if (sequencep loc)
+                                                     loc
+                                                   (list loc)))))
+        (xref--show-xrefs (if (functionp 'xref--create-fetcher)
+                              (-const xrefs)
+                            xrefs)
+                          display-action))
+    (message "Not found for: %s" (thing-at-point 'symbol t))))
   :hook
-  (prog-mode . lsp)
+  (prog-mode . lsp-deferred)
+  :commands (lsp lsp-deferred lsp-find-definition)
   :init
   (setq lsp-auto-guess-root t))
 
@@ -2258,8 +2274,7 @@
         lsp-ui-doc-include-signature t
         lsp-ui-doc-position 'at-point
         lsp-ui-sideline-enable nil
-        lsp-ui-sideline-ignore-duplicate t)
-  )
+        lsp-ui-sideline-ignore-duplicate t))
 
 (use-package company-lsp
   :ensure t
@@ -2303,8 +2318,6 @@
 
   :hook
   (vterm-mode . disable-font-lock-mode))
-
-
 
 (use-package server
   :no-require
