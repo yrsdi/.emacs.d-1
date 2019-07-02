@@ -437,6 +437,17 @@ Current position is preserved."
     (with-no-warnings (goto-line ffap-file-at-point-line-number))
     (setq ffap-file-at-point-line-number nil)))
 
+(defun tj-commas-to-new-lines (start end)
+  "Convert commas to commas with new-lines from START to END.
+Useful to take a long list of arguments on one-line and split
+them across multiple lines."
+  (interactive "r")
+  (let* ((in (buffer-substring-no-properties start end))
+         (out (s-replace ", " ",\n" in)))
+    (save-excursion
+      (delete-region start end)
+      (insert out))))
+
 (defun init-subword ()
   (let ((adv (cons 'advice
 		   (lambda ()
