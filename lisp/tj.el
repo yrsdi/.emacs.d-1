@@ -360,14 +360,13 @@ Current position is preserved."
   (interactive "r")
   (save-excursion
     (goto-char start)
-    (let ((upcase nil))
+    (let ((upcase? (not (s-uppercase? (char-to-string (char-after))))))
       (while (not (eq end (point)))
-        (let* ((upcase (not upcase))
-               (curchar (char-after))
-               (newchar (if upcase (upcase curchar) (downcase curchar))))
+        (setq upcase? (not upcase?))
+        (let* ((curchar (char-after))
+               (newchar (if upcase? (upcase curchar) (downcase curchar))))
           (delete-char 1)
-          (insert-char newchar)
-          (forward-char 1))))))
+          (insert-char newchar))))))
 
 (define-key isearch-mode-map [(control return)]
   #'isearch-exit-other-end)
