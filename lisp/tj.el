@@ -145,7 +145,7 @@
     (eshell-send-input)))
 
 (defun tj-goto (repo)
-  "Go to or clone the given dev `repo'."
+  "Go to or clone the given dev REPO."
   (interactive
    (list
     (ido-read-directory-name "Directory: " "~/dev/")))
@@ -192,7 +192,6 @@
 (defun tj-what-hexadecimal-value ()
   "Prints the decimal value of a hexadecimal string under cursor."
   (interactive)
-
   (let (input tmp p1 p2 )
     (save-excursion
       (re-search-backward "[^0-9A-Fa-fx#]" nil t)
@@ -326,9 +325,9 @@
 (global-set-key (kbd "s-q") #'fill-paragraph)
 (global-set-key (kbd "s-x") #'execute-extended-command)
 
-(defun strip-convert-lines-into-one-big-string (beg end)
-"strip and convert selected lines into one big string which is copied into kill ring.
-When transient-mark-mode is enabled, if no region is active then only the
+(defun tj-multi-line-to-one-line (beg end)
+"Convert selected lines into one line and copy it in to the kill ring.
+When transient-mark-mode is enabled, If no region is active then only the
 current line is acted upon.
 
 If the region begins or ends in the middle of a line, that entire line is
@@ -364,7 +363,9 @@ Current position is preserved."
       (while (not (eq end (point)))
         (setq upcase? (not upcase?))
         (let* ((curchar (char-after))
-               (newchar (if upcase? (upcase curchar) (downcase curchar))))
+               (newchar (if upcase?
+                            (upcase curchar)
+                          (downcase curchar))))
           (delete-char 1)
           (insert-char newchar))))))
 
