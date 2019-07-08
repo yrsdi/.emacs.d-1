@@ -448,6 +448,9 @@ them across multiple lines."
       (delete-region start end)
       (insert out))))
 
+(global-set-key (kbd "<s-right>") 'sp-up-sexp)
+(global-set-key (kbd "<s-left>") 'sp-down-sexp)
+
 (defun init-subword ()
   (let ((adv (cons 'advice
 		   (lambda ()
