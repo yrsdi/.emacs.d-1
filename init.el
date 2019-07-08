@@ -1228,6 +1228,8 @@
   :mode
   ("\\.markdown$" . markdown-mode)
   ("\\.md$" . markdown-mode)
+  :hook
+  (markdown . writegood-mode)
   :config
   (defun tj-wrap-with-tags ()
     (interactive)
@@ -1242,6 +1244,9 @@
    ("C-c C-w" . tj-wrap-with-tags)
    :map markdown-mode-map
    ("C-c <" . tj-tml-insert-open-and-close-tag))
+  :ensure t)
+
+(use-package writegood-mode
   :ensure t)
 
 (use-package yaml-mode
