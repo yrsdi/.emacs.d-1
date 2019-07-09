@@ -629,11 +629,12 @@
 	("C-c C-t" . go-test-current-file)
 	("C-c M-t" . go-test-current-test)
 	("C-c g" . godoc)
+	("M-s r" . lsp-find-references)
 	;; ("C-c <C-m>" . tj-go-kill-doc)
         ("C-c C-c" . lsp-describe-thing-at-point)
-	("M-." . godef-jump)
+	("M-." . lsp-ui-peek-find-definitions)
         ("s-t" . counsel-projectile-find-file)
-	("s-." . godef-jump-other-window))
+	("s-." . lsp-ui-peek--goto-xref-other-window))
   :config
 
   ;; (use-package go-eldoc
@@ -981,8 +982,6 @@
   :commands (diffview-current diffview-region diffview-message))
 
 (use-package f :ensure t)
-
-
 
 (use-package dired
   :bind
@@ -1929,9 +1928,26 @@
   (add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook))
 
 (use-package smartparens
-  :ensure t
-  :bind
-  ("M-(" . sp-wrap-round))
+  :demand t
+  :bind (:map smartparens-mode-map
+              ("M-(" . sp-wrap-round)
+              ("M-s" . sp-unwrap-sexp)
+              ("C-)" . sp-forward-slurp-sexp)
+              ("C-}" . sp-forward-barf-sexp)
+              ("C-{" . sp-backward-barf-sexp)
+              ("C-(" . sp-backward-slurp-sexp)
+              ("C-'" . sp-rewrap-sexp)
+              ("M-S" . sp-split-sexp)
+              ("M-J" . sp-join-sexp)
+              ("M-W" . sp-copy-sexp))
+  :config
+  (setq sp-ignore-modes-list '(minibuffer-inactive-mode eval-expression-minibuffer-setup))
+  (show-smartparens-global-mode t)
+  (smartparens-global-mode t)
+  (sp-local-pair 'js2-mode "{ " " }" :trigger-wrap "{")
+  :hook
+  (comint-mode . smartparens-mode)
+  (eshell-mode . smartparens-mode))
 
 (use-package eval-expr
   :ensure t
@@ -2239,6 +2255,8 @@
 
 (global-set-key (kbd "C-x (") 'resmacro-start-macro)
 
+(require 'alwrite)
+
 (require 'titlecase)
 
 (use-package unfill
@@ -2313,6 +2331,11 @@ EXTRA is a plist of extra parameters."
 
 (use-package github-review
   :ensure t)
+
+;; (use-package objed
+;;   :ensure t
+;;   :config
+;;   (objed-mode))
 
 (use-package vterm
   :ensure t
