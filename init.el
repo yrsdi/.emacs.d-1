@@ -1928,7 +1928,10 @@
   (add-hook 'minibuffer-setup-hook #'my-minibuffer-setup-hook)
   (add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook))
 
-(use-package smartparens :ensure t)
+(use-package smartparens
+  :ensure t
+  :bind
+  ("M-(" . sp-wrap-round))
 
 (use-package eval-expr
   :ensure t
