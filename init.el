@@ -2255,7 +2255,7 @@
 
 (global-set-key (kbd "C-x (") 'resmacro-start-macro)
 
-(require 'alwrite)
+(require 'wordswitch)
 
 (require 'titlecase)
 
