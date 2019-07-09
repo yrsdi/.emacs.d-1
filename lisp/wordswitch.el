@@ -34,7 +34,7 @@
 ;; `wordswitch'
 
 ;; A wordswitch buffer will pop up, add and remove different words or sentences by pressing + and
-;; -. And switch between sentences by navigating up and down to the next sentence by pressing n and
+;; -.  And switch between sentences by navigating up and down to the next sentence by pressing n and
 ;; to the previous sentence by pressing p.
 
 ;;; License:
