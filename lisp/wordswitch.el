@@ -1,4 +1,4 @@
-;;; wordswitch.el ---  Word Switch a tool to try a different word or sentence so you don't have to delete one idea to create another.  -*- lexical-binding: t; -*-
+;;; wordswitch.el ---  Word Switch is a tool to try a different word or sentence so you don't have to delete one idea to create another.  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2019 Travis Jeffery
 
