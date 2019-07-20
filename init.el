@@ -102,6 +102,13 @@
   :config
   (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right))
 
+(use-package cider
+  :ensure t)
+
+(use-package clojure-mode
+  :ensure t
+  :hook
+  (clojure-mode . paredit-mode))
 
 (use-package dashboard
   :ensure t
@@ -634,7 +641,7 @@
         ("C-c C-c" . lsp-describe-thing-at-point)
 	("M-." . lsp-ui-peek-find-definitions)
         ("s-t" . counsel-projectile-find-file)
-	("s-." . lsp-ui-peek--goto-xref-other-window))
+	("s-." . tj-lsp-find-definition-other-window))
   :config
 
   ;; (use-package go-eldoc
@@ -647,7 +654,7 @@
     "Split window vertically and use LSP to find the definition of the thing at point."
     (interactive)
     (switch-to-buffer-other-window (buffer-name))
-    (lsp-find-definition))
+    (lsp-ui-peek-find-definitions))
 
   ;; override this func for testify
   (defun go-test-current-test ()
@@ -714,7 +721,7 @@
     (flycheck-mode)
     (go-eldoc-setup)
     (electric-indent-mode)
-    (electric-pair-mode)
+    (electric-pair-mode 1)
     (selected-minor-mode 1)
     (font-lock-mode -1)
     ;; (setq company-backends '(company-go))
@@ -883,7 +890,7 @@
   ;; (setq projectile-completion-system 'ivy)
   :config
   (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
-  (projectile-global-mode +1))
+  (projectile-global-mode 1))
 
 (use-package pt
   :ensure t)
@@ -1173,6 +1180,9 @@
   :ensure t
   :bind (:map dired-mode-map
 	      ("/" . dired-narrow)))
+
+(use-package package-lint
+  :ensure t)
 
 (use-package dired-ranger
   :bind (:map dired-mode-map
@@ -1509,20 +1519,7 @@
          ("<C-m> >" . mc/mark-next-like-this)
          ;; Extra multiple cursors stuff
          ("<C-m> %" . mc/insert-numbers)
-         ("C-S-<mouse-1>" . mc/add-cursor-on-click))
-
-  :bind (:map selected-keymap
-              ("c"   . mc/edit-lines)
-              ("."   . mc/mark-next-like-this)
-              ("<"   . mc/unmark-next-like-this)
-              ("C->" . mc/skip-to-next-like-this)
-              (","   . mc/mark-previous-like-this)
-              (">"   . mc/unmark-previous-like-this)
-              ("C-<" . mc/skip-to-previous-like-this)
-              ("y"   . mc/mark-next-symbol-like-this)
-              ("Y"   . mc/mark-previous-symbol-like-this)
-              ("w"   . mc/mark-next-word-like-this)
-              ("W"   . mc/mark-previous-word-like-this)))
+         ("C-S-<mouse-1>" . mc/add-cursor-on-click)))
 
 (use-package mc-extras
   :ensure t
@@ -1921,7 +1918,7 @@
     (setq gc-cons-threshold most-positive-fixnum))
 
   (defun my-minibuffer-exit-hook ()
-    (electric-pair-mode +1)
+    (electric-pair-mode 1)
     (setq gc-cons-threshold 800000))
 
   (add-hook 'minibuffer-setup-hook #'my-minibuffer-setup-hook)
@@ -1931,7 +1928,6 @@
   :demand t
   :bind (:map smartparens-mode-map
               ("M-(" . sp-wrap-round)
-              ("M-s" . sp-unwrap-sexp)
               ("C-)" . sp-forward-slurp-sexp)
               ("C-}" . sp-forward-barf-sexp)
               ("C-{" . sp-backward-barf-sexp)
@@ -1941,6 +1937,7 @@
               ("M-J" . sp-join-sexp)
               ("M-W" . sp-copy-sexp))
   :config
+  (require 'smartparens-config)
   (setq sp-ignore-modes-list '(minibuffer-inactive-mode eval-expression-minibuffer-setup))
   (show-smartparens-global-mode t)
   (smartparens-global-mode t)
@@ -2305,6 +2302,7 @@ EXTRA is a plist of extra parameters."
 (use-package company-lsp
   :ensure t
   :config
+  (setq company-lsp-cache-candidates 'auto)
   (add-to-list 'company-backends 'company-lsp))
 
 (use-package vdiff
@@ -2346,9 +2344,13 @@ EXTRA is a plist of extra parameters."
       (cd-absolute title))
     (rename-buffer (format "term %s" title)))
   (add-hook 'vterm-set-title-functions 'vterm--rename-buffer-as-title)
-
   :hook
   (vterm-mode . disable-font-lock-mode))
+
+(use-package proced-narrow
+    :ensure t
+    :bind (:map proced-mode-map
+        ("/" . proced-narrow)))
 
 (use-package server
   :no-require

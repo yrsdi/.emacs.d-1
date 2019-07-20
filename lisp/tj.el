@@ -471,4 +471,9 @@ them across multiple lines."
 (setq auto-mode-alist
       (cons '("\\.mod$" . text-mode) auto-mode-alist))
 
+;; (require 'proced-narrow)
+;; (require 'proced)
+
+;; (define-key proced-mode-map (kbd "/") 'proced-narrow)
+
 (provide 'tj)
