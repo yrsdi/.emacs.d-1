@@ -2267,10 +2267,10 @@
   \(fn arg char)"
   'interactive)
 
-
 (use-package lsp-mode
   :ensure t
   :config
+    (add-to-list 'lsp-language-id-configuration '(clojure-mode . "clojure-mode"))
   (cl-defun lsp-find-locations (method &optional extra &key display-action)
   "Send request named METHOD and get cross references of the symbol under point.
 EXTRA is a plist of extra parameters."
