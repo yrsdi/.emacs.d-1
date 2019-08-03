@@ -16,7 +16,7 @@
 (unless package-archive-contents
   (package-refresh-contents))
 
-(set-frame-font "Hack 10" nil t)
+(set-frame-font "Hack 9" nil t)
 
 (define-key isearch-mode-map (kbd "C-o") #'isearch-occur)
 
@@ -102,7 +102,7 @@
   :config
   (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right))
 
-(use-package cider
+ (use-package cider
   :ensure t)
 
 (use-package clojure-mode
@@ -534,41 +534,6 @@
     (setq-local imenu-create-index-function 'tj-js-imenu-make-index))
   (add-hook 'web-mode-hook #'tj-web-mode-hook)
 
-
-  (defun tj-tml-insert-open-and-close-tag ()
-    "Generates an open and close HTML snippet using the current word."
-    (interactive)
-    (let ((inserting-new-tag nil))
-      (if (looking-back "[-A-Za-z0-9:_]")
-	  (progn (set-mark-command nil)
-		 (while (looking-back "[-A-Za-z0-9:_]")
-		   (backward-char)))
-	(setq inserting-new-tag t)
-	(set-mark-command nil)
-	(insert "p")
-	(exchange-point-and-mark))
-      (let ((tag (buffer-substring (region-beginning) (region-end))))
-	(delete-char (string-width tag))
-	(cond ((string-match "\\`[bh]r\\'" tag)
-	       (insert (concat "<" tag ">")))
-	      ((string-match (concat "\\`\\(?:img\\|meta\\|link\\|"
-				     "input\\|base\\|area\\|col\\|"
-				     "frame\\|param\\)\\'")
-			     tag)
-	       (yas-expand-snippet (concat "<" tag " $1>$0")))
-	      (t
-	       (yas-expand-snippet
-		(if inserting-new-tag
-		    (concat "<${1:"
-			    tag
-			    "}>$0</${1:"
-			    "$(and (string-match \"[-A-Za-z0-9:_]+\" yas-text) "
-			    "(match-string 0 yas-text))}>")
-		  (concat "<"
-			  tag
-			  "$1>$0</"
-			  tag
-			  ">"))))))))
   (defun tj-rb-insert-or-toggle-erb-tag ()
     "Insert an ERb tag if the point isn't currently in one, or toggle the type."
     (interactive)
@@ -608,7 +573,7 @@
   :bind
   ("M-." . tern-find-definition)
   ("C-c >" . tj-rb-insert-or-toggle-erb-tag)
-  ("C-c <" . tj-tml-insert-open-and-close-tag))
+  ("C-c <" . tj-insert-open-and-close-tag))
 
 (use-package company-quickhelp
   :ensure t
@@ -638,7 +603,7 @@
 	("C-c g" . godoc)
 	("M-s r" . lsp-find-references)
 	;; ("C-c <C-m>" . tj-go-kill-doc)
-        ("C-c C-c" . lsp-describe-thing-at-point)
+        ("C-c C-c" . godoc-at-point)
 	("M-." . lsp-ui-peek-find-definitions)
         ("s-t" . counsel-projectile-find-file)
 	("s-." . tj-lsp-find-definition-other-window))
@@ -1240,10 +1205,6 @@
   :hook
   (markdown . writegood-mode)
   :config
-  (defun tj-wrap-with-tags ()
-    (interactive)
-    (wrap-region-with-tag))
-
   (defun tj-insert-author-tag ()
     (interactive)
     (insert "<author></author>")
@@ -1252,7 +1213,7 @@
   (("C-c <C-m>" . tj-insert-author-tag)
    ("C-c C-w" . tj-wrap-with-tags)
    :map markdown-mode-map
-   ("C-c <" . tj-tml-insert-open-and-close-tag))
+   ("C-c <" . tj-insert-open-and-close-tag))
   :ensure t)
 
 (use-package writegood-mode
@@ -2347,10 +2308,10 @@ EXTRA is a plist of extra parameters."
   :hook
   (vterm-mode . disable-font-lock-mode))
 
-(use-package proced-narrow
-    :ensure t
-    :bind (:map proced-mode-map
-        ("/" . proced-narrow)))
+;; (use-package proced-narrow
+;;     :ensure t
+;;     :bind (:map proced-mode-map
+;;         ("/" . proced-narrow)))
 
 (use-package server
   :no-require
