@@ -647,7 +647,7 @@
 
   (setq-local compilation-read-command nil)
 
-  (defun tj-find-file-go ()
+  (defun go-find-file ()
     "Find file under $GOROOT."
     (interactive)
     (find-file "/usr/local/go/src/"))
@@ -1814,7 +1814,7 @@
   :bind
   (("C-*"     . counsel-org-agenda-headlines)
    ("C-x C-f" . counsel-find-file)
-   ("C-x C-g" . find-file-go)
+   ("C-x C-g" . go-find-file)
    ("C-h f"   . counsel-describe-function)
    ("C-x r b" . counsel-bookmark)
    ("M-x"     . counsel-M-x)
@@ -1828,16 +1828,6 @@
   :commands counsel-minibuffer-history
   :init
   :config
-
-  (defun find-file-go (arg)
-    (interactive "P")
-    (let*
-        ((pkg (or
-               (and arg (read-string "PKG: "))
-               (thing-at-point 'filename)))
-         (dir (f-join (getenv "GOPATH") "src" pkg)))
-      (projectile-find-file-in-directory dir)))
-
   (defun ag-go (arg)
     (interactive "P")
     (let*
