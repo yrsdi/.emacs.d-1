@@ -18,13 +18,6 @@
 
 (setq-default fill-column 100)
 
-(when (memq window-system '(mac))
-  (set-frame-font (font-spec :family "Fira Code" :size 14 :weight 'normal)))
-
-(when (memq window-system '(x))
-  (set-face-attribute 'default nil :font "Fira Code")
-  (set-frame-font (font-spec :family "Fira Code" :size 12)))
-
 ;; open help, ack, etc. in the same window
 ;; (setq-default same-window-regexps '("."))
 (setq-default same-window-regexps nil)
@@ -38,12 +31,6 @@
 
 ;; warn when opening files bigger than 100MB
 (setq large-file-warning-threshold 100000000)
-
-(defconst savefile-dir (expand-file-name "savefile" user-emacs-directory))
-
-;; create the savefile dir if it doesn't exist
-(unless (file-exists-p savefile-dir)
-  (make-directory savefile-dir))
 
 ;; the toolbar is just a waste of valuable screen estate
 ;; in a tty tool-bar-mode does not properly auto-load, and is

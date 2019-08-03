@@ -18,9 +18,21 @@
 
 (set-frame-font "Hack 9" nil t)
 
+
+
 (define-key isearch-mode-map (kbd "C-o") #'isearch-occur)
 
 (define-key input-decode-map [?\C-m] [C-m])
+
+
+(unless (package-installed-p 'use-package)
+  (package-install 'use-package))
+
+(require 'use-package)
+
+(use-package bind-key :ensure t)
+
+(setq use-package-verbose t)
 
 (eval-and-compile
   (mapc #'(lambda (entry)
@@ -43,13 +55,6 @@
           ("C-c -" . my-ctrl-c-minus-map)
           ("C-c =" . my-ctrl-c-equals-map)
           ("C-c ." . my-ctrl-c-r-map))))
-
-(unless (package-installed-p 'use-package)
-  (package-install 'use-package))
-
-(require 'use-package)
-
-(setq use-package-verbose t)
 
 (use-package visual-fill-column
   :ensure t
@@ -909,8 +914,16 @@
 
 ;; saveplace remembers your location in a file when saving files
 (require 'saveplace)
+
+
 (use-package saveplace
   :config
+  (defconst savefile-dir (expand-file-name "savefile" user-emacs-directory))
+
+  ;; create the savefile dir if it doesn't exist
+  (unless (file-exists-p savefile-dir)
+    (make-directory savefile-dir))
+
   (setq save-place-file (expand-file-name "saveplace" savefile-dir))
   ;; activate it for all buffers
   (setq-default save-place t))
@@ -1848,6 +1861,28 @@
          (search (read-string "Search string: ")))
       (ag search dir))))
 
+(use-package smartparens
+  :demand t
+  :bind (:map smartparens-mode-map
+              ("M-(" . sp-wrap-round)
+              ("C-)" . sp-forward-slurp-sexp)
+              ("C-}" . sp-forward-barf-sexp)
+              ("C-{" . sp-backward-barf-sexp)
+              ("C-(" . sp-backward-slurp-sexp)
+              ("C-'" . sp-rewrap-sexp)
+              ("M-S" . sp-split-sexp)
+              ("M-J" . sp-join-sexp)
+              ("M-W" . sp-copy-sexp))
+  :config
+  (require 'smartparens-config)
+  (setq sp-ignore-modes-list '(minibuffer-inactive-mode eval-expression-minibuffer-setup))
+  (show-smartparens-global-mode t)
+  (smartparens-global-mode t)
+  (sp-local-pair 'js2-mode "{ " " }" :trigger-wrap "{")
+  :hook
+  (comint-mode . smartparens-mode)
+  (eshell-mode . smartparens-mode))
+
 (use-package counsel-projectile
   :ensure t
   :config
@@ -1873,7 +1908,7 @@
 (use-package minibuffer
   :config
   (defun my-minibuffer-setup-hook ()
-    (smartparens-mode -1)
+   (smartparens-mode -1)
     (electric-pair-mode -1)
     (subword-mode)
     (setq gc-cons-threshold most-positive-fixnum))
@@ -1885,27 +1920,6 @@
   (add-hook 'minibuffer-setup-hook #'my-minibuffer-setup-hook)
   (add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook))
 
-(use-package smartparens
-  :demand t
-  :bind (:map smartparens-mode-map
-              ("M-(" . sp-wrap-round)
-              ("C-)" . sp-forward-slurp-sexp)
-              ("C-}" . sp-forward-barf-sexp)
-              ("C-{" . sp-backward-barf-sexp)
-              ("C-(" . sp-backward-slurp-sexp)
-              ("C-'" . sp-rewrap-sexp)
-              ("M-S" . sp-split-sexp)
-              ("M-J" . sp-join-sexp)
-              ("M-W" . sp-copy-sexp))
-  :config
-  (require 'smartparens-config)
-  (setq sp-ignore-modes-list '(minibuffer-inactive-mode eval-expression-minibuffer-setup))
-  (show-smartparens-global-mode t)
-  (smartparens-global-mode t)
-  (sp-local-pair 'js2-mode "{ " " }" :trigger-wrap "{")
-  :hook
-  (comint-mode . smartparens-mode)
-  (eshell-mode . smartparens-mode))
 
 (use-package eval-expr
   :ensure t
