@@ -18,13 +18,6 @@
 
 (setq-default fill-column 100)
 
-(when (memq window-system '(mac))
-  (set-frame-font (font-spec :family "Fira Code" :size 14 :weight 'normal)))
-
-(when (memq window-system '(x))
-  (set-face-attribute 'default nil :font "Fira Code")
-  (set-frame-font (font-spec :family "Fira Code" :size 12)))
-
 ;; open help, ack, etc. in the same window
 ;; (setq-default same-window-regexps '("."))
 (setq-default same-window-regexps nil)
@@ -38,12 +31,6 @@
 
 ;; warn when opening files bigger than 100MB
 (setq large-file-warning-threshold 100000000)
-
-(defconst savefile-dir (expand-file-name "savefile" user-emacs-directory))
-
-;; create the savefile dir if it doesn't exist
-(unless (file-exists-p savefile-dir)
-  (make-directory savefile-dir))
 
 ;; the toolbar is just a waste of valuable screen estate
 ;; in a tty tool-bar-mode does not properly auto-load, and is
@@ -449,6 +436,52 @@ them across multiple lines."
 
 (global-set-key (kbd "<s-right>") 'sp-up-sexp)
 (global-set-key (kbd "<s-left>") 'sp-down-sexp)
+
+(defun tj-wrap-with-tags ()
+  "Generates an open and close HTML snippet using the current word."
+  (interactive)
+  (let ((body (buffer-substring (region-beginning) (region-end))))
+    (goto-char (region-beginning))
+    (delete-char (string-width body))
+    (yas-expand-snippet
+     (concat "<$1$2>"
+             body
+             "</$1>"))))
+
+(defun tj-insert-open-and-close-tag ()
+  "Generates an open and close HTML snippet using the current word."
+  (interactive)
+  (let ((inserting-new-tag nil))
+    (if (looking-back "[-A-Za-z0-9:_]")
+	(progn (set-mark-command nil)
+	       (while (looking-back "[-A-Za-z0-9:_]")
+		 (backward-char)))
+      (setq inserting-new-tag t)
+      (set-mark-command nil)
+      (insert "p")
+      (exchange-point-and-mark))
+    (let ((tag (buffer-substring (region-beginning) (region-end))))
+      (delete-char (string-width tag))
+      (cond ((string-match "\\`[bh]r\\'" tag)
+	     (insert (concat "<" tag ">")))
+	    ((string-match (concat "\\`\\(?:img\\|meta\\|link\\|"
+				   "input\\|base\\|area\\|col\\|"
+				   "frame\\|param\\)\\'")
+			   tag)
+	     (yas-expand-snippet (concat "<" tag " $1>$0")))
+	    (t
+	     (yas-expand-snippet
+	      (if inserting-new-tag
+		  (concat "<${1:"
+			  tag
+			  "}>$0</${1:"
+			  "$(and (string-match \"[-A-Za-z0-9:_]+\" yas-text) "
+			  "(match-string 0 yas-text))}>")
+		(concat "<"
+			tag
+			"$1>$0</"
+			tag
+			">"))))))))
 
 (defun init-subword ()
   (let ((adv (cons 'advice

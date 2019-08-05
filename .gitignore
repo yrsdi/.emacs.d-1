@@ -34,3 +34,8 @@ prelude-cheatsheet.log
 undohist
 emojis
 projectile.cache
+.lsp-session-v1
+bookmarks
+forge-database.sqlite
+smex-items
+transient/
