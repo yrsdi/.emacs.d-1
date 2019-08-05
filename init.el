@@ -636,10 +636,10 @@
 	("C-c C-t" . go-test-current-file)
 	("C-c M-t" . go-test-current-test)
 	("C-c g" . godoc)
-	("M-s r" . lsp-find-references)
+	;; ("M-s r" . lsp-find-references)
 	;; ("C-c <C-m>" . tj-go-kill-doc)
-        ("C-c C-c" . lsp-describe-thing-at-point)
-	("M-." . lsp-ui-peek-find-definitions)
+        ("C-c C-c" . godoc-at-point)
+	("M-." . godef-jump)
         ("s-t" . counsel-projectile-find-file)
 	("s-." . tj-lsp-find-definition-other-window))
   :config
@@ -676,7 +676,7 @@
   (setenv "GOPATH" (expand-file-name (concat (getenv "HOME") "/dev")))
   (setenv "GOROOT" "/usr/local/go")
 
-  (add-hook 'before-save-hook 'gofmt-before-save nil t)
+  ;; (add-hook 'before-save-hook 'gofmt-before-save nil t)
 
   (setq tab-width 8)
 
@@ -724,7 +724,7 @@
     (electric-pair-mode 1)
     (selected-minor-mode 1)
     (font-lock-mode -1)
-    ;; (setq company-backends '(company-go))
+    (setq company-backends '(company-go))
     (go-guru-hl-identifier-mode)
     (if (not (string-match "go" compile-command))
 	(set (make-local-variable 'compile-command)
@@ -738,7 +738,6 @@
 
   :hook
   (go-mode . tj-go-hook))
-
 
 (use-package selected :ensure t)
 
@@ -1226,7 +1225,7 @@
 
 (use-package whitespace
   :init
-  (dolist (hook '(prog-mode-hook text-mode-hook))
+  (dolist (hook '(prog-mode-hook))
     (add-hook hook #'whitespace-mode))
   (add-hook 'before-save-hook #'whitespace-cleanup)
   :config
@@ -1238,8 +1237,10 @@
   ("\\.markdown$" . markdown-mode)
   ("\\.md$" . markdown-mode)
   :hook
-  (markdown . writegood-mode)
+  ((markdown-mode . font-lock-mode)
+   (markdown-mode . writegood-mode))
   :config
+
   (defun tj-wrap-with-tags ()
     (interactive)
     (wrap-region-with-tag))
@@ -1459,12 +1460,12 @@
   :ensure t
   :defer t)
 
-(use-package helpful
-  :ensure t
-  :bind
-  (("C-h f" . helpful-callable)
-   ("C-h v" . helpful-variable)
-   ("C-h k" . helpful-key)))
+;; (use-package helpful
+;;   :ensure t
+;;   :bind
+;;   (("C-h f" . helpful-callable)
+;;    ("C-h v" . helpful-variable)
+;;    ("C-h k" . helpful-key)))
 
 (use-package alert
   :ensure t
@@ -1548,19 +1549,19 @@
   :bind
   (("C-c x" . browse-url-at-point)))
 
-(use-package deft
-  :ensure t
-  :commands deft
-  :bind
-  (("C-x D" . deft))
-  :config
-  (setq deft-directory "~/Dropbox/org")
-  (setq deft-extensions '("org" "md"))
-  (setq deft-default-extension "org")
-  (setq deft-text-mode 'org-mode)
-  (setq deft-use-filename-as-title t)
-  (setq deft-use-filter-string-for-filename t)
-  (setq deft-auto-save-interval 0))
+;; (use-package deft
+;;   :ensure t
+;;   :commands deft
+;;   :bind
+;;   (("C-x D" . deft))
+;;   :config
+;;   (setq deft-directory "~/Dropbox/org")
+;;   (setq deft-extensions '("org" "md"))
+;;   (setq deft-default-extension "org")
+;;   (setq deft-text-mode 'org-mode)
+;;   (setq deft-use-filename-as-title t)
+;;   (setq deft-use-filter-string-for-filename t)
+;;   (setq deft-auto-save-interval 0))
 
 (defun isearch-initial-string nil)
 
@@ -1689,12 +1690,13 @@
     (add-to-list 'exec-path "C:/Program Files (x86)/Aspell/bin/"))
   (setq ispell-program-name "aspell" ; use aspell instead of ispell
 	ispell-extra-args '("--sug-mode=ultra"))
-  (add-hook 'text-mode-hook #'flyspell-mode)
-  (add-hook 'prog-mode-hook #'flyspell-prog-mode))
+  (add-hook 'text-mode-hook #'flyspell-mode))
 
 (use-package flycheck
   :ensure t
   :config
+  (setq flycheck-check-syntax-automatically '(save mode-enable))
+  (setq flycheck-idle-change-delay 4)
   (add-hook 'after-init-hook #'global-flycheck-mode))
 
 (use-package super-save
@@ -1822,23 +1824,10 @@
 (use-package moccur-edit
   :after color-moccur)
 
-(use-package ivy
-  :ensure t
-  :diminish
-  :config
-  (ivy-mode 1)
-  (setq ivy-use-virtual-buffers t)
-  (setq enable-recursive-minibuffers t)
-  (global-set-key (kbd "C-c C-r") 'ivy-resume)
-  (global-set-key (kbd "<f6>") 'ivy-resume))
-
 (use-package ace-window
   :ensure t
   :diminish
   :bind* ("<s-return>" . ace-window))
-
-(use-package swiper
-  :ensure t)
 
 (use-package counsel
   :diminish
@@ -2267,43 +2256,43 @@
   \(fn arg char)"
   'interactive)
 
-(use-package lsp-mode
-  :ensure t
-  :config
-    (add-to-list 'lsp-language-id-configuration '(clojure-mode . "clojure-mode"))
-  (cl-defun lsp-find-locations (method &optional extra &key display-action)
-  "Send request named METHOD and get cross references of the symbol under point.
-EXTRA is a plist of extra parameters."
-  (if-let ((loc (lsp-request method
-                          (append (lsp--text-document-position-params) extra))))
-      (let ((xrefs (lsp--locations-to-xref-items (if (sequencep loc)
-                                                     loc
-                                                   (list loc)))))
-        (xref--show-xrefs (if (functionp 'xref--create-fetcher)
-                              (-const xrefs)
-                            xrefs)
-                          display-action))
-    (message "Not found for: %s" (thing-at-point 'symbol t))))
-  :hook
-  (prog-mode . lsp-deferred)
-  :commands (lsp lsp-deferred lsp-find-definition)
-  :init
-  (setq lsp-auto-guess-root t))
+;; (use-package lsp-mode
+;;   :ensure t
+;;   :config
+;;     (add-to-list 'lsp-language-id-configuration '(clojure-mode . "clojure-mode"))
+;;   (cl-defun lsp-find-locations (method &optional extra &key display-action)
+;;   "Send request named METHOD and get cross references of the symbol under point.
+;; EXTRA is a plist of extra parameters."
+;;   (if-let ((loc (lsp-request method
+;;                           (append (lsp--text-document-position-params) extra))))
+;;       (let ((xrefs (lsp--locations-to-xref-items (if (sequencep loc)
+;;                                                      loc
+;;                                                    (list loc)))))
+;;         (xref--show-xrefs (if (functionp 'xref--create-fetcher)
+;;                               (-const xrefs)
+;;                             xrefs)
+;;                           display-action))
+;;     (message "Not found for: %s" (thing-at-point 'symbol t))))
+;;   :hook
+;;   (prog-mode . lsp-deferred)
+;;   :commands (lsp lsp-deferred lsp-find-definition)
+;;   :init
+;;   (setq lsp-auto-guess-root t))
 
-(use-package lsp-ui
-  :ensure t
-  :init
-  (setq lsp-ui-doc-enable nil
-        lsp-ui-doc-include-signature t
-        lsp-ui-doc-position 'at-point
-        lsp-ui-sideline-enable nil
-        lsp-ui-sideline-ignore-duplicate t))
+;; (use-package lsp-ui
+;;   :ensure t
+;;   :init
+;;   (setq lsp-ui-doc-enable nil
+;;         lsp-ui-doc-include-signature t
+;;         lsp-ui-doc-position 'at-point
+;;         lsp-ui-sideline-enable nil
+;;         lsp-ui-sideline-ignore-duplicate t))
 
-(use-package company-lsp
-  :ensure t
-  :config
-  (setq company-lsp-cache-candidates 'auto)
-  (add-to-list 'company-backends 'company-lsp))
+;; (use-package company-lsp
+;;   :ensure t
+;;   :config
+;;   (setq company-lsp-cache-candidates 'auto)
+;;   (add-to-list 'company-backends 'company-lsp))
 
 (use-package vdiff
   :ensure t)
@@ -2347,10 +2336,10 @@ EXTRA is a plist of extra parameters."
   :hook
   (vterm-mode . disable-font-lock-mode))
 
-(use-package proced-narrow
-    :ensure t
-    :bind (:map proced-mode-map
-        ("/" . proced-narrow)))
+;; (use-package proced-narrow
+;;     :ensure t
+;;     :bind (:map proced-mode-map
+;;         ("/" . proced-narrow)))
 
 (use-package server
   :no-require

@@ -204,10 +204,9 @@
     (setq input (buffer-substring-no-properties p1 p2) )
 
     (let ((case-fold-search nil) )
-      (setq tmp (replace-regexp-in-string "^0x" "" input )) ; C, Perl, …
-      (setq tmp (replace-regexp-in-string "^#x" "" tmp )) ; elisp …
-      (setq tmp (replace-regexp-in-string "^#" "" tmp ))  ; CSS …
-      )
+      (setq tmp (replace-regexp-in-string "^0x" "" input ))
+      (setq tmp (replace-regexp-in-string "^#x" "" tmp ))
+      (setq tmp (replace-regexp-in-string "^#" "" tmp )))
 
     (message "Hex %s is %d" tmp (string-to-number tmp 16))))
 
@@ -467,6 +466,8 @@ them across multiple lines."
       (ad-activate f))))
 
 (add-hook 'after-init-hook #'init-subword)
+
+(add-hook 'focus-out-hook 'garbage-collect)
 
 (setq auto-mode-alist
       (cons '("\\.mod$" . text-mode) auto-mode-alist))
