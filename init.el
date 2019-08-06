@@ -614,9 +614,8 @@
 	("s-." . tj-lsp-find-definition-other-window))
   :config
 
-  ;; (use-package go-eldoc
-  ;;   :ensure t
-  ;;   :diminish)
+  (use-package go-eldoc
+    :ensure t)
 
   (use-package godoctor :ensure t)
 
@@ -1248,7 +1247,6 @@
   (setq org-todo-keywords
         (quote ((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")
                 (sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)"))))
-  (setq org-agenda-files (split-string (shell-command-to-string "find ~/Dropbox/org/*")))
   (setq org-archive-location (expand-file-name "~/Dropbox/org/archive.org::* Archived Tasks"))
   (setq org-treat-S-cursor-todo-selection-as-state-change nil)
   (setq org-use-fast-todo-selection t)
@@ -1349,7 +1347,7 @@
   (setq org-todo-keywords
 	(quote ((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")
 		(sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)"))))
-  (setq org-agenda-files (split-string (shell-command-to-string "find ~/Dropbox/org/*")))
+
   (setq org-archive-location (expand-file-name "~/Dropbox/org/archive.org::* Archived Tasks"))
   (setq org-treat-S-cursor-todo-selection-as-state-change nil)
   (setq org-use-fast-todo-selection t)
@@ -1841,7 +1839,7 @@
       (ag search dir))))
 
 (use-package smartparens
-  :demand t
+  :ensure t
   :bind (:map smartparens-mode-map
               ("M-(" . sp-wrap-round)
               ("C-)" . sp-forward-slurp-sexp)
@@ -1887,7 +1885,7 @@
 (use-package minibuffer
   :config
   (defun my-minibuffer-setup-hook ()
-   (smartparens-mode -1)
+  (smartparens-mode -1)
     (electric-pair-mode -1)
     (subword-mode)
     (setq gc-cons-threshold most-positive-fixnum))
