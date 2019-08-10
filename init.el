@@ -18,8 +18,6 @@
 
 (set-frame-font "Hack 9" nil t)
 
-
-
 (define-key isearch-mode-map (kbd "C-o") #'isearch-occur)
 
 (define-key input-decode-map [?\C-m] [C-m])
@@ -112,8 +110,14 @@
 
 (use-package clojure-mode
   :ensure t
+  :config
+  (cljr-add-keybindings-with-prefix "C-c C-m")
   :hook
+  (clojure-mode . clj-refactor-mode)
   (clojure-mode . paredit-mode))
+
+(use-package clj-refactor
+  :ensure t)
 
 (use-package dashboard
   :ensure t
@@ -1197,8 +1201,8 @@
 (use-package move-text
   :ensure t
   :bind
-  (([(meta shift up)] . move-text-up)
-   ([(meta shift down)] . move-text-down)))
+  (("M-P" . move-text-up)
+   ("M-N" . move-text-down)))
 
 (use-package whitespace
   :init
@@ -1222,8 +1226,9 @@
     (interactive)
     (insert "<author></author>")
     (backward-char 9))
+
   :bind
-  (("C-c <C-m>" . tj-insert-author-tag)
+  (("C-c C-c a" . tj-insert-author-tag)
    ("C-c C-w" . tj-wrap-with-tags)
    :map markdown-mode-map
    ("C-c <" . tj-insert-open-and-close-tag))
@@ -2219,43 +2224,43 @@
   \(fn arg char)"
   'interactive)
 
-;; (use-package lsp-mode
-;;   :ensure t
-;;   :config
-;;     (add-to-list 'lsp-language-id-configuration '(clojure-mode . "clojure-mode"))
-;;   (cl-defun lsp-find-locations (method &optional extra &key display-action)
-;;   "Send request named METHOD and get cross references of the symbol under point.
-;; EXTRA is a plist of extra parameters."
-;;   (if-let ((loc (lsp-request method
-;;                           (append (lsp--text-document-position-params) extra))))
-;;       (let ((xrefs (lsp--locations-to-xref-items (if (sequencep loc)
-;;                                                      loc
-;;                                                    (list loc)))))
-;;         (xref--show-xrefs (if (functionp 'xref--create-fetcher)
-;;                               (-const xrefs)
-;;                             xrefs)
-;;                           display-action))
-;;     (message "Not found for: %s" (thing-at-point 'symbol t))))
-;;   :hook
-;;   (prog-mode . lsp-deferred)
-;;   :commands (lsp lsp-deferred lsp-find-definition)
-;;   :init
-;;   (setq lsp-auto-guess-root t))
+(use-package lsp-mode
+  :ensure t
+  :config
+    (add-to-list 'lsp-language-id-configuration '(clojure-mode . "clojure-mode"))
+  (cl-defun lsp-find-locations (method &optional extra &key display-action)
+  "Send request named METHOD and get cross references of the symbol under point.
+EXTRA is a plist of extra parameters."
+  (if-let ((loc (lsp-request method
+                          (append (lsp--text-document-position-params) extra))))
+      (let ((xrefs (lsp--locations-to-xref-items (if (sequencep loc)
+                                                     loc
+                                                   (list loc)))))
+        (xref--show-xrefs (if (functionp 'xref--create-fetcher)
+                              (-const xrefs)
+                            xrefs)
+                          display-action))
+    (message "Not found for: %s" (thing-at-point 'symbol t))))
+  :hook
+  (prog-mode . lsp-deferred)
+  :commands (lsp lsp-deferred lsp-find-definition)
+  :init
+  (setq lsp-auto-guess-root t))
 
-;; (use-package lsp-ui
-;;   :ensure t
-;;   :init
-;;   (setq lsp-ui-doc-enable nil
-;;         lsp-ui-doc-include-signature t
-;;         lsp-ui-doc-position 'at-point
-;;         lsp-ui-sideline-enable nil
-;;         lsp-ui-sideline-ignore-duplicate t))
+(use-package lsp-ui
+  :ensure t
+  :init
+  (setq lsp-ui-doc-enable nil
+        lsp-ui-doc-include-signature t
+        lsp-ui-doc-position 'at-point
+        lsp-ui-sideline-enable nil
+        lsp-ui-sideline-ignore-duplicate t))
 
-;; (use-package company-lsp
-;;   :ensure t
-;;   :config
-;;   (setq company-lsp-cache-candidates 'auto)
-;;   (add-to-list 'company-backends 'company-lsp))
+(use-package company-lsp
+  :ensure t
+  :config
+  (setq company-lsp-cache-candidates 'auto)
+  (add-to-list 'company-backends 'company-lsp))
 
 (use-package vdiff
   :ensure t)
@@ -2282,6 +2287,10 @@
 (use-package github-review
   :ensure t)
 
+(use-package kubernetes
+  :ensure t
+  :commands (kubernetes-overview))
+
 ;; (use-package objed
 ;;   :ensure t
 ;;   :config
@@ -2303,6 +2312,9 @@
 ;;     :ensure t
 ;;     :bind (:map proced-mode-map
 ;;         ("/" . proced-narrow)))
+
+(require 'go-mod)
+(require 'prag-prog)
 
 (use-package server
   :no-require

@@ -502,9 +502,6 @@ them across multiple lines."
 
 (add-hook 'focus-out-hook 'garbage-collect)
 
-(setq auto-mode-alist
-      (cons '("\\.mod$" . text-mode) auto-mode-alist))
-
 ;; (require 'proced-narrow)
 ;; (require 'proced)
 
