@@ -2309,10 +2309,10 @@ EXTRA is a plist of extra parameters."
   :hook
   (vterm-mode . disable-font-lock-mode))
 
-;; (use-package proced-narrow
-;;     :ensure t
-;;     :bind (:map proced-mode-map
-;;         ("/" . proced-narrow)))
+(use-package proced-narrow
+    :ensure t
+    :bind (:map proced-mode-map
+        ("/" . proced-narrow)))
 
 (require 'go-mod)
 (require 'prag-prog)
