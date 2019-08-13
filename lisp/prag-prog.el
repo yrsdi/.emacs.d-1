@@ -16,13 +16,24 @@
 
 (defvar-local prag-prog-tags-hidden nil "Whether tags are hidden or not.")
 
+(defconst prag-prog-ed-re "<ed>\\(.*\\)</ed>")
+(defconst prag-prog-author-re "<author>\\(.*\\)</author>")
+
+(defun prag-prog-stat ()
+  "Count number of ed, author tags."
+  (interactive)
+  (let* ((str (buffer-substring-no-properties (point-min) (point-max)))
+         (ed-count (s-count-matches prag-prog-ed-re str))
+         (author-count (s-count-matches prag-prog-author-re str)))
+    (message (format "ed: %d, author: %d" ed-count author-count))))
+
 (defun prag-prog-hide-ed-author-tags ()
   "Toggle visibility of ed, author tags."
   (interactive)
   (save-excursion
     (goto-char (point-min))
     (while (not (eobp))
-      (re-search-forward "<ed>\\(.*\\)</ed>")
+      (re-search-forward prag-prog-ed-re)
       (let ((beg (match-beginning 0))
             (end (match-end 0)))
         (if prag-prog-tags-hidden
