@@ -110,14 +110,15 @@
 
 (use-package clojure-mode
   :ensure t
-  :config
-  (cljr-add-keybindings-with-prefix "C-c C-m")
+
   :hook
   (clojure-mode . clj-refactor-mode)
   (clojure-mode . paredit-mode))
 
 (use-package clj-refactor
-  :ensure t)
+  :ensure t
+  :config
+  (cljr-add-keybindings-with-prefix "C-c C-m"))
 
 (use-package dashboard
   :ensure t
