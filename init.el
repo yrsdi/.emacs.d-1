@@ -206,7 +206,10 @@
   :ensure t)
 
 (use-package forge
-  :ensure t)
+  :ensure t
+  :config
+  (setq forge-topic-list-limit '(3 . -1)
+        forge-pull-notifications nil))
 
 (use-package ivy-rich
   :ensure t
@@ -614,7 +617,6 @@
 	;; ("M-s r" . lsp-find-references)
 	;; ("C-c <C-m>" . tj-go-kill-doc)
         ("C-c C-c" . godoc-at-point)
-	("M-." . godef-jump)
         ("s-t" . counsel-projectile-find-file)
 	("s-." . tj-lsp-find-definition-other-window))
   :config
