@@ -1,7 +1,11 @@
-;;; -*- lexical-binding: t -*-
+;;; prag-prog.el --- Tools to help write and edit Prag Prog books. -*- lexical-binding: t -*-
 
+;;; Commentary:
+;;
 
 (require 'cl-lib)
+
+;;; Code:
 
 (defvar-local prag-prog-tags-hidden nil "Whether tags are hidden or not.")
 
@@ -10,47 +14,46 @@
                (:copier nil))
   name highlight)
 
-(defvar prag-prog-tag-ed
-  (prag-prog-tag-create :name "ed" :highlight 'hi-yellow))
-
-(defvar prag-prog-tag-author
-  (prag-prog-tag-create :name "author" :highlight 'hi-blue))
-
 (defvar prag-prog-tags
-      (list prag-prog-tag-ed
-        prag-prog-tag-author))
-
-(defun prag-prog--format (string &rest objects)
-  (intern (apply #'format string objects)))
+  (list
+   (prag-prog-tag-create :name "ed" :highlight 'hi-yellow)
+   (prag-prog-tag-create :name "author" :highlight 'hi-blue)))
 
 (defun prag-prog-tag-re (tag)
-  (let* ((name (prag-prog-tag-name tag)))
+  "Regexp for TAG."
+  (let ((name (prag-prog-tag-name tag)))
     (format "<%s>.*?\\(\n.*\\)*</%s>" name name)))
+
+(defun prag-prog-format-defun-name (string &rest objects)
+  "Format OBJECTS with STRING and return as a symbol."
+  (intern (apply #'format string objects)))
 
 (cl-dolist (tag prag-prog-tags)
   (eval
-   (let* ((tag-re (prag-prog-tag-re tag))
+   (let* (
+          (tag-re (prag-prog-tag-re tag))
           (tag-name (prag-prog-tag-name tag))
-          (high-face (prag-prog-tag-highlight tag))
-          (open-tag (format "<%s>" tag-name))
-          (defun-next (prag-prog--format "prag-prog-tag-%s-next" tag-name))
-          (defun-prev (prag-prog--format "prag-prog-tag-%s-prev" tag-name))
-          (defun-high (prag-prog--format "prag-prog-tag-%s-highlight" tag-name)))
+          (tag-open (format "<%s>" tag-name))
+          (highlight-face (prag-prog-tag-highlight tag))
+
+          (defun-next (prag-prog-format-defun-name "prag-prog-tag-%s-next" tag-name))
+          (defun-prev (prag-prog-format-defun-name "prag-prog-tag-%s-prev" tag-name))
+          (defun-highlight (prag-prog-format-defun-name "prag-prog-tag-%s-highlight" tag-name)))
      `(progn
         (cl-defun ,defun-next ()
-          "Move to the next ,tag-name tag."
+          "Move to the next tag."
           (interactive)
-          (search-forward ,open-tag))
+          (search-forward ,tag-open))
 
         (cl-defun ,defun-prev ()
-          "Move to the previous ,tag-name tag."
+          "Move to the previous tag."
           (interactive)
-          (search-backward ,open-tag))
+          (search-backward ,tag-open))
 
-        (cl-defun ,defun-high ()
-          "Highlight ,tag-name tags."
+        (cl-defun ,defun-highlight ()
+          "Highlight the tag."
           (interactive)
-          (highlight-regexp ,tag-re ',high-face nil))))))
+          (highlight-regexp ,tag-re ',highlight-face nil))))))
 
 (defun prag-prog-stat ()
   "Count number of tags."
@@ -63,7 +66,6 @@
                                   (prag-prog-tag-name tag)
                                   (s-count-matches (prag-prog-tag-re tag) str)))
                         prag-prog-tags)))))
-
 
 (defun prag-prog-tags-toggle-visibility ()
   "Toggle visbility of tags."
@@ -108,10 +110,12 @@
             map))
 
 (defun prag-prog-mode-setup ()
-  "Setup prag-prog-mode."
+  "Setup 'prag-prog-mode'."
   (interactive)
   (prag-prog-tags-highlight))
 
 (add-hook 'prag-prog-mode-hook 'prag-prog-mode-setup)
 
 (provide 'prag-prog)
+
+;;; prag-prog.el ends here
