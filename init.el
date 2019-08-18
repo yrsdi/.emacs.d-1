@@ -584,7 +584,6 @@
   ("\\.js$" . web-mode)
 
   :bind
-  ("M-." . tern-find-definition)
   ("C-c >" . tj-rb-insert-or-toggle-erb-tag)
   ("C-c <" . tj-insert-open-and-close-tag))
 
@@ -1225,10 +1224,6 @@
    (markdown-mode . writegood-mode))
   :config
 
-  (defun tj-insert-author-tag ()
-    (interactive)
-    (insert "<author></author>")
-    (backward-char 9))
 
   :bind
   (("C-c C-c a" . tj-insert-author-tag)
@@ -1529,19 +1524,11 @@
   :bind
   (("C-c x" . browse-url-at-point)))
 
-;; (use-package deft
-;;   :ensure t
-;;   :commands deft
-;;   :bind
-;;   (("C-x D" . deft))
-;;   :config
-;;   (setq deft-directory "~/Dropbox/org")
-;;   (setq deft-extensions '("org" "md"))
-;;   (setq deft-default-extension "org")
-;;   (setq deft-text-mode 'org-mode)
-;;   (setq deft-use-filename-as-title t)
-;;   (setq deft-use-filter-string-for-filename t)
-;;   (setq deft-auto-save-interval 0))
+(use-package pdf-tools
+  :ensure t
+  :config
+  (pdf-tools-install)
+  (pdf-loader-install))
 
 (defun isearch-initial-string nil)
 
@@ -1861,12 +1848,9 @@
   :config
   (require 'smartparens-config)
   (setq sp-ignore-modes-list '(minibuffer-inactive-mode eval-expression-minibuffer-setup))
-  (show-smartparens-global-mode t)
-  (smartparens-global-mode t)
   (sp-local-pair 'js2-mode "{ " " }" :trigger-wrap "{")
   :hook
-  (comint-mode . smartparens-mode)
-  (eshell-mode . smartparens-mode))
+  (prog-mode . smartparens-strict-mode))
 
 (use-package counsel-projectile
   :ensure t
@@ -2125,7 +2109,6 @@
   :bind
   ("M-j" . comment-indent-new-line)
   ("C-c C-j" . js2-jump-to-definition)
-  ("M-." . tern-find-definition)
   :config
   (defun js2-match-async-arrow-function ()
     (when (and (js2-contextual-kwd-p (js2-current-token) "async")
