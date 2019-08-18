@@ -16,13 +16,20 @@
 
 (defvar prag-prog-tags
   (list
+   (prag-prog-tag-create :name "filename")
+   (prag-prog-tag-create :name "dir")
    (prag-prog-tag-create :name "ed" :highlight 'hi-yellow)
    (prag-prog-tag-create :name "author" :highlight 'hi-blue)))
+
+(defun prag-prog-insert-author-tag ()
+    (interactive)
+    (insert "<author></author>")
+    (backward-char 9))
 
 (defun prag-prog-tag-re (tag)
   "Regexp for TAG."
   (let ((name (prag-prog-tag-name tag)))
-    (format "<%s>.*?\\(\n.*\\)*</%s>" name name)))
+    (format "<%s>\\(.\\|\n\\)*?</%s>" name name)))
 
 (defun prag-prog-format-defun-name (string &rest objects)
   "Format OBJECTS with STRING and return as a symbol."
@@ -34,8 +41,11 @@
           (tag-re (prag-prog-tag-re tag))
           (tag-name (prag-prog-tag-name tag))
           (tag-open (format "<%s>" tag-name))
+          (tag-close (format "</%s>" tag-name))
+          (tag-close-length (length tag-close))
           (highlight-face (prag-prog-tag-highlight tag))
 
+          (defun-insert (prag-prog-format-defun-name "prag-prog-tag-%s-insert" tag-name))
           (defun-next (prag-prog-format-defun-name "prag-prog-tag-%s-next" tag-name))
           (defun-prev (prag-prog-format-defun-name "prag-prog-tag-%s-prev" tag-name))
           (defun-highlight (prag-prog-format-defun-name "prag-prog-tag-%s-highlight" tag-name)))
@@ -50,22 +60,33 @@
           (interactive)
           (search-backward ,tag-open))
 
+        (cl-defun ,defun-insert ()
+          "Inert the tag."
+          (interactive)
+          (insert ,tag-open ,tag-close)
+          (backward-char ,tag-close-length))
+
         (cl-defun ,defun-highlight ()
           "Highlight the tag."
           (interactive)
           (highlight-regexp ,tag-re ',highlight-face nil))))))
 
+
 (defun prag-prog-stat ()
   "Count number of tags."
   (interactive)
-  (message
-   (s-join ", "
-           (let* ((str (buffer-substring-no-properties (point-min) (point-max))))
-             (cl-mapcar (lambda (tag)
-                          (format "%s: %d"
-                                  (prag-prog-tag-name tag)
-                                  (s-count-matches (prag-prog-tag-re tag) str)))
-                        prag-prog-tags)))))
+  (let ((counts
+         (s-join "\n"
+                 (let* ((str (buffer-substring-no-properties (point-min) (point-max))))
+                   (cl-mapcar (lambda (tag)
+                                (format "%s %d"
+                                        (prag-prog-tag-name tag)
+                                        (s-count-matches (prag-prog-tag-re tag) str)))
+                              prag-prog-tags)))))
+    (with-temp-buffer
+      (insert counts)
+      (align-regexp (point-min) (point-max) ".* \\([0-9,]+\\).*" -1)
+      (message (buffer-substring-no-properties (point-min) (point-max))))))
 
 (defun prag-prog-tags-toggle-visibility ()
   "Toggle visbility of tags."
@@ -90,8 +111,9 @@
   (interactive)
   (save-excursion
     (cl-dolist (tag prag-prog-tags)
-      (goto-char (point-min))
-      (highlight-regexp (prag-prog-tag-re tag) (prag-prog-tag-highlight tag) nil))))
+      (when (prag-prog-tag-highlight tag)
+        (goto-char (point-min))
+        (highlight-regexp (prag-prog-tag-re tag) (prag-prog-tag-highlight tag) nil)))))
 
 (defun prag-prog-tags-unhighlight ()
   "Unhighlight of tags."
@@ -107,6 +129,9 @@
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map (kbd "M-p") 'prag-prog-tag-ed-prev)
             (define-key map (kbd "M-n") 'prag-prog-tag-ed-next)
+            (define-key map (kbd "C-c C-c a") 'prag-prog-tag-author-insert)
+            (define-key map (kbd "C-c C-c f") 'prag-prog-tag-filename-insert)
+            (define-key map (kbd "C-c C-c d") 'prag-prog-tag-dir-insert)
             map))
 
 (defun prag-prog-mode-setup ()
