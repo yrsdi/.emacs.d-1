@@ -22,7 +22,6 @@
 
 (define-key input-decode-map [?\C-m] [C-m])
 
-
 (unless (package-installed-p 'use-package)
   (package-install 'use-package))
 
@@ -38,10 +37,8 @@
             (bind-key (car entry) (cdr entry)))
         '(("C-,"   . my-ctrl-comma-map)
           ("<C-m>" . my-ctrl-m-map)
-
           ("C-h e" . my-ctrl-h-e-map)
           ("C-h x" . my-ctrl-h-x-map)
-
           ("C-c b" . my-ctrl-c-b-map)
           ("C-c e" . my-ctrl-c-e-map)
           ("C-c m" . my-ctrl-c-m-map)
@@ -808,43 +805,10 @@
   (add-to-list 'projectile-globally-ignored-directories "deps")
   (add-to-list 'projectile-globally-ignored-directories "node_modules")
 
-  ;;  (eval-after-load "projectile"
-  ;;	'(progn (setq magit-repo-dirs (mapcar (lambda (dir)
-  ;;					    (substring dir 0 -1))
-  ;;					  (remove-if-not (lambda (project)
-  ;;							   (file-directory-p (concat project "/.git/")))
-  ;;							 (projectile-relevant-known-projects))))
-  ;;	    (setq magit-repo-dirs-depth 1)))
-
-  (def-projectile-commander-method ?e "Open eshell in root directory." (call-interactively 'projectile-run-eshell))
-  (def-projectile-commander-method ?! "Run shell command in root directory." (call-interactively 'projectile-run-async-shell-command-in-root))
-  (def-projectile-commander-method ?m "Run shell command in root directory." (call-interactively 'projectile-run-async-shell-command-in-root))
-  (def-projectile-commander-method ?a "Run deadgrep in the project." (let ((current-prefix-arg 1)) (call-interactively 'counsel-projectile-rg)))
-  (def-projectile-commander-method ?A "Run ack in the project." (let ((current-prefix-arg 1)) (call-interactively 'ack)))
-  (def-projectile-commander-method ?c "Compile project." (call-interactively 'projectile-compile-project))
-  (def-projectile-commander-method ?d "Open project root in dired." (call-interactively 'projectile-dired))
-  (def-projectile-commander-method ?t "Test project." (call-interactively 'projectile-test-project))
-  (def-projectile-commander-method ?G "Open file in git." (call-interactively 'github-browse-file))
-
-  (def-projectile-commander-method ?d "Open project root in dired." (call-interactively 'projectile-dired))
-  (def-projectile-commander-method ?u
-    "Git fetch."
-    (magit-status)
-    (if (fboundp 'magit-fetch-from-upstream)
-	(call-interactively #'magit-fetch-from-upstream)
-      (call-interactively #'magit-fetch-current)))
-  (def-projectile-commander-method ?p
-    "Git push."
-    (magit-status)
-    (if (fboundp 'magit-push-current-to-upstream)
-	(call-interactively #'magit-push-current-to-upstream)
-      (call-interactively #'magit-push-current)))
-
   :bind
   (("C-c t" . projectile-toggle-between-implementation-and-test)
    ("C-c p p" . projectile-switch-project)
    ("C-c C-p" . projectile-test-project)
-   ("M-m" . projectile-commander)
    ("C-c P" . 'projectile-switch-project)))
 
 (global-set-key (kbd "C-c c") #'embrace-commander)
@@ -1199,6 +1163,23 @@
 
   (when (memq window-system '(mac ns))
     (set-frame-font "Hack 14" nil t)))
+
+(use-package transient
+  :ensure t
+  :config
+  (define-transient-command tj-transient ()
+    ""
+    ["Actions"
+     ("a" "Deadgrep" deadgrep)
+     ("d" "Dired" dired)
+     ("e" "Eshell" eshell)
+     ("c" "Compile Root Directory" projectile-compile-project)
+     ("E" "Eshell Root Directory" projectile-run-eshell)
+     ("t" "Test Project" projectile-test-project)
+     ("G" "GitHub Browse File" github-browse-file)
+     ])
+  :bind
+  ("M-m" . tj-transient))
 
 (use-package move-text
   :ensure t
