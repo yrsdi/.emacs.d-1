@@ -2275,6 +2275,11 @@ EXTRA is a plist of extra parameters."
   :hook
   (vterm-mode . disable-font-lock-mode))
 
+(use-package flycheck-vale
+  :ensure t
+  :config
+  (flycheck-vale-setup))
+
 (use-package proced-narrow
     :ensure t
     :bind (:map proced-mode-map

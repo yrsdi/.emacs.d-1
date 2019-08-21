@@ -502,9 +502,6 @@ them across multiple lines."
 
 (add-hook 'focus-out-hook 'garbage-collect)
 
-;; (require 'proced-narrow)
-;; (require 'proced)
-
 ;; (define-key proced-mode-map (kbd "/") 'proced-narrow)
 
 (provide 'tj)
