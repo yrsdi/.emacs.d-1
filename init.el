@@ -645,8 +645,6 @@
   (load "~/dev/src/github.com/stapelberg/expanderr/expanderr.el")
   (setq go-test-verbose t)
   (setq gofmt-command "goimports")
-  (setenv "GOPATH" (expand-file-name (concat (getenv "HOME") "/dev")))
-  (setenv "GOROOT" "/usr/local/go")
 
   ;; (add-hook 'before-save-hook 'gofmt-before-save nil t)
 
@@ -657,7 +655,7 @@
   (defun go-find-file ()
     "Find file under $GOROOT."
     (interactive)
-    (find-file "/usr/local/go/src/"))
+    (find-file (format "%s/src/" (getenv "GOROOT"))))
 
   (use-package go-add-tags :ensure t)
 
@@ -1157,6 +1155,8 @@
 
 (use-package exec-path-from-shell
   :ensure t
+  :init
+  (setq exec-path-from-shell-variables '("PATH" "MANPATH" "GOROOT" "GOPATH"))
   :config
   (when (memq window-system '(mac ns x))
     (exec-path-from-shell-initialize))
