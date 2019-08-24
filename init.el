@@ -101,6 +101,8 @@
 (use-package clojure-mode
   :ensure t
   :hook
+  (clojure-mode . eldoc-mode)
+  (inf-clojure-mode . eldoc-mode)
   (clojure-mode . clj-refactor-mode)
   (clojure-mode . paredit-mode))
 
@@ -816,7 +818,8 @@
 
 (use-package dired
   :bind
-  (("C-x d" . dired-jump))
+  (("C-x d" . dired-jump)
+   ("C-x D" . counsel-dired-jump))
   :bind (:map dired-mode-map
 	      ("z"     . delete-window)
 	      ("e"     . ora-ediff-files)
@@ -1819,11 +1822,6 @@
   (require 'em-smart)
 
   :config
-  (defun tj-eshell()
-    (interactive)
-    (if (projectile-project-p)
-	(call-interactively 'projectile-run-eshell)
-      (eshell)))
 
   (setq eshell-where-to-jump 'begin)
   (setq eshell-review-quick-commands nil)
@@ -1835,7 +1833,7 @@
 
   (add-hook 'eshell-mode-hook 'tj-eshell-mode-hook)
   :bind
-  (("C-x m" . tj-eshell)))
+  (("C-x m" . eshell)))
 
 
 (use-package eshell-bookmark
