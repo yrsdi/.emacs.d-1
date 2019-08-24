@@ -107,7 +107,6 @@
 
 (use-package clojure-mode
   :ensure t
-
   :hook
   (clojure-mode . clj-refactor-mode)
   (clojure-mode . paredit-mode))
@@ -115,7 +114,7 @@
 (use-package clj-refactor
   :ensure t
   :config
-  (cljr-add-keybindings-with-prefix "C-c C-m"))
+  (cljr-add-keybindings-with-prefix "<C-m> C-r"))
 
 (use-package dashboard
   :ensure t
@@ -135,9 +134,11 @@
 
   (setq auto-revert-buffer-list-filter
 	'magit-auto-revert-repository-buffers-p)
+
   (remove-hook 'magit-refs-sections-hook 'magit-insert-tags)
   ;; (setq vc-handled-backends '(Git))
   ;; (setq magit-push-always-verify nil)
+
   (setq vc-follow-symlinks t)
   (setq magit-refresh-status-buffer t)
 
@@ -494,95 +495,11 @@
   :ensure t
   :bind ("C-=" . er/expand-region))
 
-(use-package web-mode
+(use-package rjsx-mode
   :ensure t
   :config
+  (add-to-list 'auto-mode-alist '("components\\/.*\\.js\\'" . rjsx-mode)))
 
-  (add-to-list 'auto-mode-alist '("\\.html\\'" . web-mode))
-
-  (setq-default flycheck-disabled-checkers
-		(append flycheck-disabled-checkers
-			'(javascript-jshint)))
-  (flycheck-add-mode 'javascript-eslint 'web-mode)
-  (setq web-mode-markup-indent-offset 2)
-  (setq web-mode-css-indent-offset 2)
-  (setq web-mode-attr-indent-offset 2)
-  (setq web-mode-code-indent-offset 2)
-  (setq web-mode-enable-auto-closing t)
-  (setq web-mode-enable-auto-expanding t)
-  (setq web-mode-enable-auto-opening t)
-  (setq web-mode-enable-auto-pairing t)
-  (add-to-list 'web-mode-comment-formats '("jsx" . "//"))
-  (add-to-list 'web-mode-comment-formats '("javascript" . "//"))
-  (setq web-mode-tag-auto-close-style 2)
-  (setq web-mode-content-types-alist
-	'(("jsx" . "\\.js[x]?\\'")))
-  (setq web-mode-engines-alist
-	'(("reactjs" . "\\.js$")
-          ("go" . "\\.html$")))
-  (with-eval-after-load 'web-mode
-    (add-to-list 'web-mode-indentation-params '("lineup-args" . nil))
-    (add-to-list 'web-mode-indentation-params '("lineup-concats" . nil))
-    (add-to-list 'web-mode-indentation-params '("lineup-calls" . nil)))
-  (setq tj--javascript-common-imenu-regex-list
-	'(("Controller" "[. \t]controller([ \t]*['\"]\\([^'\"]+\\)" 1)
-	  ("Module" "[. \t]module( *['\"]\\([a-zA-Z0-9_.]+\\)['\"], *\\[" 1)
-	  ("Function" "function[ \t]+\\([a-zA-Z0-9_$.]+\\)[ \t]*(" 1)
-	  ("Class" "class[ \t]+\\([a-zA-Z_.]+\\)" 1)
-	  ("Constant" "const[ \t]+\\([a-zA-Z_.]+\\)" 1)
-	  ("Function" "^[ \t]*\\([a-zA-Z0-9_$.]+\\)[ \t]*=[ \t]*function[ \t]*(" 1)
-	  ))
-  (defun tj--js-imenu-make-index ()
-    (save-excursion
-      (imenu--generic-function tj--javascript-common-imenu-regex-list)))
-  (defun tj-web-mode-hook nil
-    (subword-mode)
-    (tern-mode)
-
-    (setq comment-start "//"
-	  comment-end	"")
-    (setq-local imenu-create-index-function 'tj-js-imenu-make-index))
-  (add-hook 'web-mode-hook #'tj-web-mode-hook)
-
-  (defun tj-rb-insert-or-toggle-erb-tag ()
-    "Insert an ERb tag if the point isn't currently in one, or toggle the type."
-    (interactive)
-    (let ((action))
-      (if (looking-at "[\s\t\n]*<%")
-	  (setq action 'insert)
-	(save-excursion
-	  (let ((regex (concat "\\`<%.*%>\\'")))
-	    (while (or (not (region-active-p))
-		       (not (or (and (= (point-min) (region-beginning))
-				     (= (point-max) (region-end)))
-				(string-match regex (buffer-substring-no-properties
-						     (region-beginning)
-						     (region-end))))))
-	      (let ((expand-region-fast-keys-enabled))
-		(er/expand-region 1)))
-	    (let ((matched (buffer-substring-no-properties (region-beginning)
-							   (region-end))))
-	      (if (string-match regex matched)
-		  (progn (goto-char (+ (if (< (point) (mark)) (point) (mark)) 2))
-			 (cond ((looking-at "=")
-				(delete-char 1))
-			       ((looking-at "#")
-				(delete-char 1)
-				(insert "="))
-			       (t
-				(insert "#"))))
-		(setq action 'insert))))))
-      (if (eq action 'insert)
-	  (progn (insert "<%=  %>")
-		 (backward-char 3)))))
-  :mode
-  ("\\.hbs$" . web-mode)
-  ("\\.eex$" . web-mode)
-  ("\\.js$" . web-mode)
-
-  :bind
-  ("C-c >" . tj-rb-insert-or-toggle-erb-tag)
-  ("C-c <" . tj-insert-open-and-close-tag))
 
 (use-package company-quickhelp
   :ensure t
@@ -1828,7 +1745,7 @@
   (setq sp-ignore-modes-list '(minibuffer-inactive-mode eval-expression-minibuffer-setup))
   (sp-local-pair 'js2-mode "{ " " }" :trigger-wrap "{")
   :hook
-  (prog-mode . smartparens-strict-mode))
+  (prog-mode . smartparens-mode))
 
 (use-package counsel-projectile
   :ensure t
@@ -2126,6 +2043,7 @@
 (use-package magit-todos
   :ensure t
   :config
+  (setq magit-todos-exclude-globs '("dist" "node_modules"))
   (magit-todos-mode))
 
 

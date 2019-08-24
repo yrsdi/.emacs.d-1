@@ -444,9 +444,10 @@ them across multiple lines."
     (goto-char (region-beginning))
     (delete-char (string-width body))
     (yas-expand-snippet
-     (concat "<$1$2>"
+     (concat "<${1:tag}$2>"
              body
-             "</$1>"))))
+             "</${1:$(and (string-match \"[-A-Za-z0-9:_]+\" yas-text)"
+			  "(match-string 0 yas-text))}>"))))
 
 (defun tj-insert-open-and-close-tag ()
   "Generates an open and close HTML snippet using the current word."

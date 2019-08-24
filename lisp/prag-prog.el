@@ -138,7 +138,7 @@
   :lighter " prag-prog-mode"
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map (kbd "M-p") 'prag-prog-prev-ed-tag)
-            (define-key map (kbd "M-n") 'prag-prog-next-eded-next)
+            (define-key map (kbd "M-n") 'prag-prog-next-ed-tag)
             (define-key map (kbd "C-c C-c a") 'prag-prog-insert-author-tag)
             (define-key map (kbd "C-c C-c f") 'prag-prog-insert-filename-tag)
             (define-key map (kbd "C-c C-c d") 'prag-prog-insert-dir-tag)
