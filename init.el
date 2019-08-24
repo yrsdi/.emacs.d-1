@@ -35,21 +35,14 @@
   (mapc #'(lambda (entry)
             (define-prefix-command (cdr entry))
             (bind-key (car entry) (cdr entry)))
-        '(("C-,"   . my-ctrl-comma-map)
-          ("<C-m>" . my-ctrl-m-map)
-          ("C-h e" . my-ctrl-h-e-map)
-          ("C-h x" . my-ctrl-h-x-map)
-          ("C-c b" . my-ctrl-c-b-map)
-          ("C-c e" . my-ctrl-c-e-map)
-          ("C-c m" . my-ctrl-c-m-map)
-          ("C-c w" . my-ctrl-c-w-map)
-          ("C-c y" . my-ctrl-c-y-map)
-          ("C-c H" . my-ctrl-c-H-map)
-          ("C-c N" . my-ctrl-c-N-map)
-          ("C-c (" . my-ctrl-c-open-paren-map)
-          ("C-c -" . my-ctrl-c-minus-map)
-          ("C-c =" . my-ctrl-c-equals-map)
-          ("C-c ." . my-ctrl-c-r-map))))
+        '(("<C-m>" . my-ctrl-m-map) ;; mc
+          ("C-c b" . my-ctrl-c-b-map) ;; for bm
+          ("C-c m" . my-ctrl-c-o-map) ;; for org
+          ("C-c o" . my-ctrl-c-m-map) ;; for occur
+          ("C-c y" . my-ctrl-c-y-map) ;; aya
+          ("M-i" . my-m-i-map)
+          ("M-o" . my-m-o-map)
+          )))
 
 (use-package visual-fill-column
   :ensure t
@@ -292,7 +285,6 @@
          ("C-c y e" . aya-expand)
          ("C-c y o" . aya-open-line)))
 
-
 (use-package git-timemachine
   :ensure t
   :bind (("s-g" . git-timemachine)))
@@ -369,14 +361,20 @@
 
   (defun add-d-to-ediff-mode-map () (define-key ediff-mode-map "d" 'ediff-copy-both-to-C))
   (add-hook 'ediff-keymap-setup-hook 'add-d-to-ediff-mode-map)
-
   :init
   (setq ediff-split-window-function 'split-window-horizontally)
-  (setq ediff-merge-split-window-function 'split-window-horizontally))
+  (setq ediff-merge-split-window-function 'split-window-horizontally)
+  :bind (("C-c = b" . ediff-buffers)
+         ("C-c = f" . ediff-files)
+         ("C-c = r" . ediff-revision)
+         ("C-c = l" . ediff-regions-linewise)
+         ("C-c = w" . ediff-regions-wordwise)
+         ("C-c = c" . compare-windows)))
 
 (use-package git-link
   :ensure t
-  :commands (git-link git-link-commit git-link-homepage))
+  :commands (git-link git-link-commit git-link-homepage)
+  :bind ("C-c G" . git-link))
 
 (use-package git-timemachine
   :ensure t
@@ -404,20 +402,26 @@
   :commands gitpatch-mail)
 
 (use-package google-this
-  :ensure t)
+  :ensure t
+  :bind ("C-c /" . google-this-search))
 
 (use-package goto-last-change
   :ensure t
   :bind ("C-x C-/" . goto-last-change))
 
 (use-package ialign
-  :ensure t)
+  :ensure t
+  :bind
+  ("C-c [" . ialign-interactive-align))
 
 (use-package operate-on-number
-  :ensure t)
+  :ensure t
+  :bind ("C-c #" . operate-on-number-at-point))
 
 (use-package shift-number
-  :ensure t)
+  :ensure t
+  :bind (("C-c -" . shift-number-down)
+         ("C-c +" . shift-number-up)))
 
 (use-package diminish
   :ensure t
@@ -436,19 +440,7 @@
   (("C-c C-r" . ivy-resume)
    ("M-R" . ivy-resume)
    ("C-x b" . ivy-switch-buffer)
-   ("C-x B" . ivy-switch-buffer-other-window))
-  ("M-x".  counsel-M-x)
-  ;; ("C-x C-f" . counsel-find-file)
-  ("<f1> f" . counsel-describe-function)
-  ("<f1> v" . counsel-describe-variable)
-  ("<f1> l" . counsel-find-library)
-  ("<f2> i" . counsel-info-lookup-symbol)
-  ("<f2> u" . counsel-unicode-char)
-  ("C-c g" . counsel-git)
-  ("C-c j" . counsel-git-grep)
-  ("C-c a" . counsel-ag)
-  ("C-x l" . counsel-locate))
-
+   ("C-x B" . ivy-switch-buffer-other-window)))
 
 (use-package swiper
   :ensure t
@@ -506,7 +498,6 @@
 	("C-c C-r" . godoctor-rename)
 	("C-c C-t" . go-test-current-file)
 	("C-c M-t" . go-test-current-test)
-	("C-c g" . godoc)
 	;; ("M-s r" . lsp-find-references)
 	;; ("C-c <C-m>" . tj-go-kill-doc)
         ("C-c C-c" . godoc-at-point)
@@ -630,10 +621,9 @@
 (use-package embrace
   :ensure t
   :config
-  (setq	 embrace-show-help-p nil))
-
-(use-package iy-go-to-char
-  :ensure t)
+  (setq	 embrace-show-help-p nil)
+  :bind
+  ("C-c M-e" . embrace-commander))
 
 (use-package ido-completing-read+
   :ensure t
@@ -696,11 +686,14 @@
    ("C-c C-p" . projectile-test-project)
    ("C-c P" . 'projectile-switch-project)))
 
-(global-set-key (kbd "C-c c") #'embrace-commander)
+
 
 (use-package web-beautify :ensure t)
 
-(use-package deadgrep :ensure t)
+(use-package deadgrep
+  :ensure t
+  :bind
+  ("C-c a" . deadgrep))
 
 (use-package whitespace
   :diminish
@@ -823,8 +816,7 @@
 
 (use-package dired
   :bind
-  (("C-c J" . dired-double-jump)
-   ("C-x d" . dired-jump))
+  (("C-x d" . dired-jump))
   :bind (:map dired-mode-map
 	      ("z"     . delete-window)
 	      ("e"     . ora-ediff-files)
@@ -1048,86 +1040,6 @@
   (when (memq window-system '(mac ns x))
     (exec-path-from-shell-initialize)))
 
-(use-package transient
-  :ensure t
-  :after (google-this
-          color-moccur
-          counsel
-          bm
-          iy-go-to-char
-          github-browse-file
-          git-link
-          fancy-narrow
-          copy-as-format
-          ialign
-          org
-          operate-on-number-at-point
-          shift-number
-          ediff)
-  :config
-  (define-transient-command tj-transient-root ()
-    ""
-    ["Actions"
-     ("'" "Operate On Number" operate-on-number-at-point)
-     ("-" "Shift Number Down" shift-number-down)
-     ("/" "Google This" google-this-search)
-     ("=" "Ediff" tj-transient-ediff)
-     ("[" "Align" ialign-interactive-align)
-     ("a" "Deadgrep" deadgrep)
-     ("b" tj-transient-bm)
-     ("c" "Compile Root Directory" projectile-compile-project)
-     ("c" "Org" tj-transient-org)
-     ("d" "Dired" dired)
-     ("e" "Eshell" eshell)
-     ("E" "Eshell Root Directory" projectile-run-eshell)
-     ("G" "Git Link" git-link)
-     ("g" "GitHub Browse File" github-browse-file)
-     ("j" "Dired Jump" counsel-dired-jump)
-     ("M-e" "Embrace" embrace-commander)
-     ("M-j" "Iy" tj-transient-iy)
-     ("n" "Narrow to Region" fancy-narrow-to-region)
-     ("N" "Widen" fancy-widen)
-     ("O" "Moccur" moccur)
-     ("o" "Occur" occur)
-     ("t" "Test Project" projectile-test-project)
-     ("w" "Copy As Format" copy-as-format)
-     ("+" "Shift Number Up" shift-number-up)
-     ])
-
-  (define-transient-command tj-transient-org ()
-    ""
-    ["Actions"
-     ("c" "Capture" org-capture)
-     ("t" "Todo List" org-todo-list)
-     ("m" "Tags" org-tags-view)])
-
-  (define-transient-command tj-transient-bm ()
-    ""
-    ["Actions"
-     ("b" "Toggle" bm-toggle)
-     ("." "Next" bm-next)
-     ("," "Previous" bm-previous)])
-
-  (define-transient-command tj-transient-iy ()
-    ""
-    ["Actions"
-     ("j" "To Char" iy-go-up-to-char)
-     ("J" "To Char Backward" iy-go-to-char-backward)
-     ("s" "To Char Continue" iy-go-to-or-up-to-continue)
-     ("S" "To Char Continue Backward" iy-go-to-or-up-to-continue-backward)])
-
-  (define-transient-command tj-transient-ediff ()
-    ""
-    ["Actions"
-     ("b" "Buffers" ediff-buffers)
-     ("f" "Files" ediff-files)
-     ("r" "Revision" ediff-revision)
-     ("l" "Lines" ediff-regions-linewise)
-     ("w" "Words" ediff-regions-wordwise)
-     ("c" "Windows" compare-windows)])
-  :bind
-  ("M-m" . tj-transient-root))
-
 (use-package move-text
   :ensure t
   :bind
@@ -1344,7 +1256,11 @@
        (setq org-map-continue-from (outline-previous-heading)))
      "/DONE" 'tree))
 
-  (require 'org-table))
+  (require 'org-table)
+
+  :bind (("C-c m c" . org-capture)
+         ("C-c m t" . org-todo-list)
+         ("C-c m m" . orgs-tagsview)))
 
 (use-package org-journal
   :ensure t
@@ -1595,14 +1511,11 @@
 
 (use-package crux
   :ensure t
-  :bind (("C-c o" . crux-open-with)
-	 ("M-o" . crux-smart-open-line)
-         ("C-c d" . crux-duplicate-current-line-or-region)
+  :bind (("C-c d" . crux-duplicate-current-line-or-region)
 	 ("C-c n" . crux-cleanup-buffer-or-region)
 	 ("C-c f" . crux-recentf-find-file)
 	 ("C-M-z" . crux-indent-defun)
 	 ("C-c u" . crux-view-url)
-	 ("C-c e" . crux-eval-and-replace)
 	 ("C-c w" . crux-swap-windows)
 	 ("C-c D" . crux-delete-file-and-buffer)
 	 ("C-c r" . crux-rename-buffer-and-file)
@@ -1662,7 +1575,9 @@
 (use-package color-moccur
   :ensure t
   :commands (isearch-moccur isearch-all isearch-moccur-all)
-  :bind (:map isearch-mode-map
+  :bind (("C-c o o" . occur)
+         ("C-c o O" . moccur)
+         :map isearch-mode-map
 	 ("M-o" . isearch-moccur)
 	 ("M-O" . isearch-moccur-all)))
 
@@ -1786,7 +1701,8 @@
    ("C-c p f" . counsel-projectile-find-file)))
 
 (use-package github-browse-file
-  :ensure t)
+  :ensure t
+  :bind ("C-c g" . github-browse-file))
 
 (use-package minibuffer
   :config
@@ -1958,7 +1874,8 @@
 (use-package avy-zap
   :ensure t
   :bind
-  (("M-Z" . avy-zap-up-to-char-dwim)))
+  (("C-c e" . avy-zap-up-to-char-dwim)
+   ("M-Z" . avy-zap-up-to-char-dwim)))
 
 (use-package backup-walker
   :ensure t
@@ -1966,10 +1883,10 @@
 
 (use-package change-inner
   :ensure t
-  :bind (("M-i"	    . change-inner)
-	 ("M-o" . change-outer)
-	 ("s-i" . copy-inner)
-	 ("s-o" . copy-outer)))
+  :bind (("M-i k" . change-inner)
+	 ("M-o k" . change-outer)
+	 ("M-i w" . copy-inner)
+	 ("M-o w" . copy-outer)))
 
 (use-package protobuf-mode
   :ensure t
