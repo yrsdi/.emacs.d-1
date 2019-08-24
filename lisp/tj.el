@@ -197,11 +197,6 @@
 
     (message "Hex %s is %d" tmp (string-to-number tmp 16))))
 
-(defun tj-find-config ()
-  "Find a personal config file to edit."
-  (interactive)
-  (find-file "~/.emacs.d/init.el"))
-
 (defun tj-toggle-window-split ()
   (interactive)
   (if (= (count-windows) 2)
