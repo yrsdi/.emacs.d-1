@@ -16,7 +16,7 @@
 (unless package-archive-contents
   (package-refresh-contents))
 
-(set-frame-font "Hack 9" nil t)
+(set-frame-font "IBM Plex Mono 9" nil t)
 
 (define-key isearch-mode-map (kbd "C-o") #'isearch-occur)
 
@@ -1159,10 +1159,7 @@
   (setq exec-path-from-shell-variables '("PATH" "MANPATH" "GOROOT" "GOPATH"))
   :config
   (when (memq window-system '(mac ns x))
-    (exec-path-from-shell-initialize))
-
-  (when (memq window-system '(mac ns))
-    (set-frame-font "Hack 14" nil t)))
+    (exec-path-from-shell-initialize)))
 
 (use-package transient
   :ensure t
