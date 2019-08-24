@@ -47,6 +47,8 @@
 ;; disable startup screen
 (setq inhibit-startup-screen t)
 
+(setq eldoc-idle-delay 0)
+
 ;; nice scrolling
 (setq scroll-margin 0
       scroll-conservatively 100000
