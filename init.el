@@ -95,7 +95,7 @@
   :config
   (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right))
 
- (use-package cider
+(use-package cider
   :ensure t)
 
 (use-package clojure-mode
@@ -290,7 +290,9 @@
   :bind (("s-g" . git-timemachine)))
 
 (use-package ag
-  :ensure t)
+  :ensure t
+  :bind
+  ("C-c A" . ag))
 
 (use-package smart-forward
   :ensure t
@@ -314,6 +316,7 @@
   :bind (:map reb-mode-map
 	      ("M-%" . reb-query-replace))
   :config
+  (setq reb-re-syntax 'string)
   (defun reb-query-replace (to-string)
     "Replace current RE from point with `query-replace-regexp'."
     (interactive
@@ -475,8 +478,7 @@
 
 (use-package company-quickhelp
   :ensure t
-  :defer t
-  :init (add-hook 'global-company-mode-hook #'company-quickhelp-mode))
+  :defer t)
 
 (eval-after-load 'company
   '(define-key company-active-map (kbd "M-h") #'company-quickhelp-manual-begin))
@@ -500,21 +502,48 @@
 	("C-c M-t" . go-test-current-test)
 	;; ("M-s r" . lsp-find-references)
 	;; ("C-c <C-m>" . tj-go-kill-doc)
+        ("C-c C-e" . tj-go-err)
         ("C-c C-c" . godoc-at-point)
-        ("s-t" . counsel-projectile-find-file)
-	("s-." . tj-lsp-find-definition-other-window))
+	("C-." . xref-find-definitions-other-window))
   :config
+
+  (defun tj-go-err ()
+    (interactive)
+    (if (region-active-p)
+        (let ((body (buffer-substring-no-properties (region-beginning) (region-end))))
+          (goto-char (region-beginning))
+          (delete-char (string-width body))
+          (yas-expand-snippet
+           (concat "if err := ${1:" body "}; err != nil {\n"
+                   "$0\n"
+                   "}")))
+      (yas-expand-snippet
+           (concat "if err != nil {\n$0\n}"))))
+
+  (defun my-try-go-mod (dir)
+    "Find go project root for DIR."
+    (if (and dir
+             (not (f-descendant-of-p dir (or (getenv "GOPATH")
+                                             (concat (getenv "HOME") "/go")))))
+        (let ((result (locate-dominating-file dir "go.mod")))
+          (if result
+              (cons 'transient (expand-file-name result))
+            (cons 'transient dir)))
+      (when dir
+        (cons 'transient dir))))
+
+
+  (defun my-go-project-setup ()
+    "Set project root for go project."
+    (setq-local project-find-functions (list #'my-try-go-mod #'project-try-vc))
+    (setq-local lsp-auto-guess-root t))
+
+  (add-hook 'go-mode-hook #'my-go-project-setup)
 
   (use-package go-eldoc
     :ensure t)
 
   (use-package godoctor :ensure t)
-
-  (defun tj-lsp-find-definition-other-window ()
-    "Split window vertically and use LSP to find the definition of the thing at point."
-    (interactive)
-    (switch-to-buffer-other-window (buffer-name))
-    (lsp-ui-peek-find-definitions))
 
   ;; override this func for testify
   (defun go-test-current-test ()
@@ -554,6 +583,7 @@
       (interactive)
       (let ((default-directory (projectile-project-root)))
 	(go-errcheck nil nil nil))))
+
   (add-hook 'before-save-hook 'gofmt-before-save)
 
   (defun tj-go-kill-doc ()
@@ -651,6 +681,9 @@
   :ensure t
   :config
 
+
+
+  (setq projectile-enable-caching t)
   (setq projectile-indexing-method 'alien)
   (setq projectile-mode-line nil)
   (setq projectile-sort-order 'modification-time)
@@ -673,6 +706,8 @@
   ;;         "-"))))
   ;; (advice-add 'projectile-project-name :override #'projectile-project-name-old)
 
+  ;; (def-projectile-commander-method ?f "Find file." (call-interactively 'counsel-fzf))
+  (def-projectile-commander-method ?f "Find file." (call-interactively 'projectile-find-file-dwim))
   (setq projectile-switch-project-action #'projectile-commander)
   (add-to-list 'projectile-globally-ignored-directories "Godeps/_workspace")
   (add-to-list 'projectile-globally-ignored-directories "vendor")
@@ -680,13 +715,14 @@
   (add-to-list 'projectile-globally-ignored-directories "deps")
   (add-to-list 'projectile-globally-ignored-directories "node_modules")
 
+  (projectile-global-mode 1)
+
   :bind
   (("C-c t" . projectile-toggle-between-implementation-and-test)
    ("C-c p p" . projectile-switch-project)
+   ("C-c p i" . projectile-invalidate-cache)
    ("C-c C-p" . projectile-test-project)
    ("C-c P" . 'projectile-switch-project)))
-
-
 
 (use-package web-beautify :ensure t)
 
@@ -699,14 +735,6 @@
   :diminish
   :config
   (setq whitespace-line-column nil))
-
-(use-package projectile
-  :ensure t
-  :init
-  ;; (setq projectile-completion-system 'ivy)
-  :config
-  (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
-  (projectile-global-mode 1))
 
 (use-package pt
   :ensure t)
@@ -1444,21 +1472,23 @@
   (setq company-dabbrev-code-modes t)
   (setq company-dabbrev-code-other-buffers 'all)
   (setq company-dabbrev-ignore-buffers "\\`\\'")
-  (setq company-idle-delay 0.1)
+  (setq company-idle-delay 0)
   (setq company-echo-delay 0)
   (setq company-tooltip-align-annotations t)
   (setq company-tern-property-marker "")
-  (setq company-minimum-prefix-length 5)
-  (setq company-abort-manual-when-too-short 5)
+  (setq company-minimum-prefix-length 3)
+  (setq company-abort-manual-when-too-short 3)
   (setq company-dabbrev-downcase nil)
   (setq company-dabbrev-ignore-case t)
   (setq company-dabbrev-other-buffers 'all)
+
   ;; From https://github.com/company-mode/company-mode/issues/87
   ;; See also https://github.com/company-mode/company-mode/issues/123
-  (defadvice company-pseudo-tooltip-unless-just-one-frontend
-      (around only-show-tooltip-when-invoked activate)
-    (when (company-explicit-action-p)
-      ad-do-it)))
+  ;; (defadvice company-pseudo-tooltip-unless-just-one-frontend
+  ;;     (around only-show-tooltip-when-invoked activate)
+  ;;   (when (company-explicit-action-p)
+  ;;     ad-do-it))
+  )
 
 (use-package company-elisp
   :after company
@@ -1470,8 +1500,8 @@
 
 (use-package company
   :ensure t
-  :config
-  (global-company-mode))
+  :hook
+  (prog-mode . company-mode))
 
 (use-package hl-todo
   :ensure t
@@ -1569,8 +1599,8 @@
 (use-package goto-chg
   :ensure t
   :bind
-  (("C-." . goto-last-change)
-   ("C-," . goto-last-change-reverse)))
+  (("C-c ." . goto-last-change)
+   ("C-c ," . goto-last-change-reverse)))
 
 (use-package color-moccur
   :ensure t
@@ -1644,7 +1674,7 @@
   :bind
   (("C-*"     . counsel-org-agenda-headlines)
    ("C-x C-f" . counsel-find-file)
-   ("C-x C-g" . go-find-file)
+   ("C-c p g" . go-find-file)
    ("C-h f"   . counsel-describe-function)
    ("C-x r b" . counsel-bookmark)
    ("M-x"     . counsel-M-x)
@@ -1707,7 +1737,7 @@
 (use-package minibuffer
   :config
   (defun my-minibuffer-setup-hook ()
-  (smartparens-mode -1)
+    (smartparens-mode -1)
     (electric-pair-mode -1)
     (subword-mode)
     (setq gc-cons-threshold most-positive-fixnum))
@@ -1819,12 +1849,6 @@
   (require 'em-smart)
 
   :config
-  (defun tj-eshell()
-    (interactive)
-    (if (projectile-project-p)
-	(call-interactively 'projectile-run-eshell)
-      (eshell)))
-
   (setq eshell-where-to-jump 'begin)
   (setq eshell-review-quick-commands nil)
   (setq eshell-smart-space-goes-to-end t)
@@ -1835,7 +1859,7 @@
 
   (add-hook 'eshell-mode-hook 'tj-eshell-mode-hook)
   :bind
-  (("C-x m" . tj-eshell)))
+  (("C-x m" . eshell)))
 
 
 (use-package eshell-bookmark
@@ -1883,10 +1907,10 @@
 
 (use-package change-inner
   :ensure t
-  :bind (("M-i k" . change-inner)
-	 ("M-o k" . change-outer)
-	 ("M-i w" . copy-inner)
-	 ("M-o w" . copy-outer)))
+  :bind (("M-i" . change-inner)
+	 ("M-o" . change-outer)
+	 ("C-c M-i" . copy-inner)
+	 ("C-c M-o" . copy-outer)))
 
 (use-package protobuf-mode
   :ensure t
@@ -2043,20 +2067,34 @@
 (use-package lsp-mode
   :ensure t
   :config
-    (add-to-list 'lsp-language-id-configuration '(clojure-mode . "clojure-mode"))
+
+
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-stdio-connection "html-languageserver")
+                     :activation-fn (lambda (&rest _args)
+                                   (string-match-p ".*\.html$" (buffer-file-name)))
+                  :priority 1
+                  :add-on? t
+                  :server-id 'html-ls))
+
+  ;; (setq lsp-eldoc-render-all t)
+
+  (add-to-list 'lsp-language-id-configuration '(clojure-mode . "clojure-mode"))
+
   (cl-defun lsp-find-locations (method &optional extra &key display-action)
-  "Send request named METHOD and get cross references of the symbol under point.
+    "Send request named METHOD and get cross references of the symbol under point.
 EXTRA is a plist of extra parameters."
-  (if-let ((loc (lsp-request method
-                          (append (lsp--text-document-position-params) extra))))
-      (let ((xrefs (lsp--locations-to-xref-items (if (sequencep loc)
-                                                     loc
-                                                   (list loc)))))
-        (xref--show-xrefs (if (functionp 'xref--create-fetcher)
-                              (-const xrefs)
-                            xrefs)
-                          display-action))
-    (message "Not found for: %s" (thing-at-point 'symbol t))))
+    (if-let ((loc (lsp-request method
+                               (append (lsp--text-document-position-params) extra))))
+        (let ((xrefs (lsp--locations-to-xref-items (if (sequencep loc)
+                                                       loc
+                                                     (list loc)))))
+          (xref--show-xrefs (if (functionp 'xref--create-fetcher)
+                                (-const xrefs)
+                              xrefs)
+                            display-action))
+      (message "Not found for: %s" (thing-at-point 'symbol t))))
+
   :hook
   (prog-mode . lsp-deferred)
   :commands (lsp lsp-deferred lsp-find-definition)
@@ -2067,6 +2105,7 @@ EXTRA is a plist of extra parameters."
   :ensure t
   :init
   (setq lsp-ui-doc-enable nil
+        lsp-ui-doc-delay 0.1
         lsp-ui-doc-include-signature t
         lsp-ui-doc-position 'at-point
         lsp-ui-sideline-enable nil
@@ -2130,9 +2169,9 @@ EXTRA is a plist of extra parameters."
   (flycheck-vale-setup))
 
 (use-package proced-narrow
-    :ensure t
-    :bind (:map proced-mode-map
-        ("/" . proced-narrow)))
+  :ensure t
+  :bind (:map proced-mode-map
+              ("/" . proced-narrow)))
 
 (require 'go-mod)
 (require 'prag-prog)

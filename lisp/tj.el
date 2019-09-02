@@ -5,6 +5,7 @@
 (menu-bar-mode -1)
 
 (add-hook 'prog-mode-hook 'disable-font-lock-mode)
+(add-hook 'prog-mode-hook 'hs-minor-mode)
 (add-hook 'protobuf-mode-hook 'disable-font-lock-mode)
 (add-hook 'text-mode-hook 'disable-font-lock-mode)
 (add-hook 'conf-mode-hook 'disable-font-lock-mode)
@@ -31,6 +32,8 @@
 
 ;; warn when opening files bigger than 100MB
 (setq large-file-warning-threshold 100000000)
+
+(global-set-key (kbd "C-h A") 'apropos)
 
 ;; the toolbar is just a waste of valuable screen estate
 ;; in a tty tool-bar-mode does not properly auto-load, and is
@@ -266,7 +269,6 @@
   (other-window 1)
   (kill-buffer)
   (other-window 1))
-(global-set-key (kbd "s-z") 'tj-kill-other-buffer)
 
 (defun tj-toggle-fold ()
   "Toggle fold all lines larger than indentation on current line"
@@ -283,9 +285,10 @@
 (global-set-key (kbd "C-RET") 'other-window)
 (global-set-key (kbd "C-z") 'delete-other-windows)
 
+(global-set-key (kbd "C-c q") 'tj-kill-other-buffer)
+
 ;; use hippie-expand instead of dabbrev
-(global-set-key (kbd "M-/") #'hippie-expand)
-(global-set-key (kbd "s-/") #'hippie-expand)
+(global-set-key (kbd "C-/") #'hippie-expand)
 
 (global-set-key (kbd "s-b") 'backward-to-word)
 (global-set-key (kbd "s-f") 'forward-to-word)
