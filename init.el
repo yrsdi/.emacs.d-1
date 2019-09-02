@@ -101,6 +101,8 @@
 (use-package clojure-mode
   :ensure t
   :hook
+  (clojure-mode . eldoc-mode)
+  (inf-clojure-mode . eldoc-mode)
   (clojure-mode . clj-refactor-mode)
   (clojure-mode . paredit-mode))
 
@@ -844,7 +846,8 @@
 
 (use-package dired
   :bind
-  (("C-x d" . dired-jump))
+  (("C-x d" . dired-jump)
+   ("C-x D" . counsel-dired-jump))
   :bind (:map dired-mode-map
 	      ("z"     . delete-window)
 	      ("e"     . ora-ediff-files)
@@ -1849,6 +1852,7 @@
   (require 'em-smart)
 
   :config
+
   (setq eshell-where-to-jump 'begin)
   (setq eshell-review-quick-commands nil)
   (setq eshell-smart-space-goes-to-end t)
