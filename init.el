@@ -367,8 +367,8 @@
   (defun add-d-to-ediff-mode-map () (define-key ediff-mode-map "d" 'ediff-copy-both-to-C))
   (add-hook 'ediff-keymap-setup-hook 'add-d-to-ediff-mode-map)
   :init
-  (setq ediff-split-window-function 'split-window-horizontally)
-  (setq ediff-merge-split-window-function 'split-window-horizontally)
+  (setq ediff-split-window-function 'split-window-vertically)
+  (setq ediff-merge-split-window-function 'split-window-vertically)
   :bind (("C-c = b" . ediff-buffers)
          ("C-c = f" . ediff-files)
          ("C-c = r" . ediff-revision)
@@ -476,7 +476,6 @@
   :ensure t
   :config
   (add-to-list 'auto-mode-alist '("components\\/.*\\.js\\'" . rjsx-mode)))
-
 
 (use-package company-quickhelp
   :ensure t
@@ -1093,14 +1092,6 @@
   :hook
   ((markdown-mode . font-lock-mode)
    (markdown-mode . writegood-mode))
-  :config
-
-
-  :bind
-  (("C-c C-c a" . tj-insert-author-tag)
-   ("C-c C-w" . tj-wrap-with-tags)
-   :map markdown-mode-map
-   ("C-c <" . tj-insert-open-and-close-tag))
   :ensure t)
 
 (use-package writegood-mode
@@ -2071,8 +2062,6 @@
 (use-package lsp-mode
   :ensure t
   :config
-
-
   (lsp-register-client
    (make-lsp-client :new-connection (lsp-stdio-connection "html-languageserver")
                      :activation-fn (lambda (&rest _args)
@@ -2136,12 +2125,8 @@ EXTRA is a plist of extra parameters."
 (use-package iedit
   :ensure t)
 
-(use-package frog-jump-buffer :ensure t)
-
-(use-package sqlformat
-  :ensure t
-  :hook
-  (sql-mode . sqlformat-on-save-mode))
+(use-package frog-jump-buffer
+  :ensure t)
 
 (use-package github-review
   :ensure t)
@@ -2149,11 +2134,6 @@ EXTRA is a plist of extra parameters."
 (use-package kubernetes
   :ensure t
   :commands (kubernetes-overview))
-
-;; (use-package objed
-;;   :ensure t
-;;   :config
-;;   (objed-mode))
 
 (use-package vterm
   :ensure t

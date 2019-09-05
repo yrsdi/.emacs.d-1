@@ -366,6 +366,21 @@ Current position is preserved."
 
 (define-key 'help-command (kbd "C-i") #'info-display-manual)
 
+(defun tj-format-sql-region (beg end)
+    "Format SQL in region from BEG to END."
+    (interactive "r")
+    (save-excursion
+      (shell-command-on-region beg end "sql-formatter-cli" nil t)))
+
+(defun tj-format-sql-buffer ()
+  "Format SQL in buffer."
+  (interactive)
+  (tj-format-sql-region (point-min) (point-max)))
+
+(defun tj-sql-mode-hook ()
+  (add-hook 'after-save-hook 'tj-format-sql-buffer nil t))
+(add-hook 'sql-mode-hook 'tj-sql-mode-hook)
+
 ;; smart tab behavior - indent or complete
 (setq tab-always-indent 'complete)
 
@@ -447,7 +462,8 @@ them across multiple lines."
      (concat "<${1:tag}$2>"
              body
              "</${1:$(and (string-match \"[-A-Za-z0-9:_]+\" yas-text)"
-			  "(match-string 0 yas-text))}>"))))
+	     "(match-string 0 yas-text))}>"))))
+(global-set-key (kbd "C-c C-w") 'tj-wrap-with-tags)
 
 (defun tj-insert-open-and-close-tag ()
   "Generates an open and close HTML snippet using the current word."
@@ -483,6 +499,7 @@ them across multiple lines."
 			"$1>$0</"
 			tag
 			">"))))))))
+(global-set-key (kbc "C-c <") 'tj-insert-open-and-close-tag)
 
 (defun init-subword ()
   (let ((adv (cons 'advice
