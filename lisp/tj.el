@@ -499,7 +499,7 @@ them across multiple lines."
 			"$1>$0</"
 			tag
 			">"))))))))
-(global-set-key (kbc "C-c <") 'tj-insert-open-and-close-tag)
+(global-set-key (kbd "C-c <") 'tj-insert-open-and-close-tag)
 
 (defun init-subword ()
   (let ((adv (cons 'advice
