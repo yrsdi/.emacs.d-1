@@ -51,7 +51,7 @@
         (cl-defun ,defun-next ()
           "Move to the next tag."
           (interactive)
-          (search-forward ,tag-open))
+          (search-forward ,tag-close))
 
         (cl-defun ,defun-prev ()
           "Move to the previous tag."

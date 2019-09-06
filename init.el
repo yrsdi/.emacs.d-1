@@ -742,6 +742,8 @@
 
 (use-package expand-region
   :ensure t
+  :config
+  (er/add-html-mode-expansions)
   :bind ("C-=" . er/expand-region))
 
 (use-package elisp-slime-nav
@@ -1550,7 +1552,8 @@
 	 ("s-r" . crux-recentf-find-file)
 	 ("s-j" . crux-top-join-line)
 	 ("C-^" . crux-top-join-line)
-	 ("s-k" . crux-kill-whole-line)
+	 ("C-S-k" . crux-kill-whole-line)
+	 ("C-k" . kill-line)
 	 ("C-<backspace>" . crux-kill-line-backwards)
 	 ("s-o" . crux-smart-open-line-above)
 	 ([remap move-beginning-of-line] . crux-move-beginning-of-line)
