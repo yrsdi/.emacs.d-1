@@ -2108,7 +2108,8 @@ EXTRA is a plist of extra parameters."
         lsp-ui-sideline-ignore-duplicate t))
 
 (use-package company-lsp
-  :ensure t
+  :demand t
+  :commands company-lsp
   :config
   (setq company-lsp-cache-candidates 'auto)
   (add-to-list 'company-backends 'company-lsp))
