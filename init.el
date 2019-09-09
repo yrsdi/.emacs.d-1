@@ -508,6 +508,8 @@
 	("C-." . xref-find-definitions-other-window))
   :config
 
+  (setq go-test-args "-race -v")
+
   (defun tj-go-err ()
     (interactive)
     (if (region-active-p)
@@ -561,10 +563,7 @@
             (go-test--go-test (s-concat test-flag test-name additional-arguments "\\$ .")))))))
 
   (load "~/dev/src/github.com/stapelberg/expanderr/expanderr.el")
-  (setq go-test-verbose t)
-  (setq gofmt-command "goimports")
-
-  ;; (add-hook 'before-save-hook 'gofmt-before-save nil t)
+    (setq gofmt-command "goimports")
 
   (setq tab-width 8)
 
@@ -1088,6 +1087,12 @@
   (setq whitespace-style '(face tabs empty trailing lines-tail)))
 
 (use-package markdown-mode
+  :config
+
+  (unless (executable-find "pandoc")
+    (message "install pandoc"))
+  (setq markdown-command "pandoc -f markdown_github -t html")
+
   :mode
   ("\\.markdown$" . markdown-mode)
   ("\\.md$" . markdown-mode)
@@ -1896,7 +1901,8 @@
 (use-package avy-zap
   :ensure t
   :bind
-  (("C-c e" . avy-zap-up-to-char-dwim)
+  (("C-c e" . zap-up-to-char)
+   ("C-c E" . avy-zap-up-to-char-dwim)
    ("M-Z" . avy-zap-up-to-char-dwim)))
 
 (use-package backup-walker
