@@ -505,7 +505,7 @@
 	;; ("C-c <C-m>" . tj-go-kill-doc)
         ("C-c C-e" . tj-go-err)
         ("C-c C-c" . godoc-at-point)
-	("C-." . xref-find-definitions-other-window))
+        ("M-." . lsp-ui-peek-find-definitions))
   :config
 
   (setq go-test-args "-race -v")
@@ -538,8 +538,7 @@
 
   (defun my-go-project-setup ()
     "Set project root for go project."
-    (setq-local project-find-functions (list #'my-try-go-mod #'project-try-vc))
-    (setq-local lsp-auto-guess-root t))
+    (setq-local project-find-functions (list #'my-try-go-mod #'project-try-vc)))
 
   (add-hook 'go-mode-hook #'my-go-project-setup)
 
@@ -2071,6 +2070,8 @@
 (use-package lsp-mode
   :ensure t
   :config
+  (add-to-list 'lsp-clients-go-library-directories "/home/tj/dev/pkg/mod")
+  (add-to-list 'lsp-clients-go-library-directories "/home/tj/go")
   (lsp-register-client
    (make-lsp-client :new-connection (lsp-stdio-connection "html-languageserver")
                      :activation-fn (lambda (&rest _args)
