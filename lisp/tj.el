@@ -377,6 +377,24 @@ Current position is preserved."
   (interactive)
   (tj-format-sql-region (point-min) (point-max)))
 
+(defun tj-thesaurus ()
+  "Browse thesaurus."
+  (interactive)
+  (tj--browse-word "https://powerthesaurus.org/%s/synonyms"))
+
+(defun tj-dictionary ()
+  "Browse dictionary."
+  (interactive)
+  (tj--browse-word "https://merriam-webster.com/dictionary/%s"))
+
+(defun tj--browse-word (url)
+  (let ((word
+         (or
+          (and (region-active-p)
+               (buffer-substring-no-properties (region-beginning) (region-end)))
+          (read-string "Word: "))))
+    (browse-url (format url word))))
+
 (defun tj-sql-mode-hook ()
   (add-hook 'after-save-hook 'tj-format-sql-buffer nil t))
 (add-hook 'sql-mode-hook 'tj-sql-mode-hook)

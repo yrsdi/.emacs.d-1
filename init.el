@@ -568,11 +568,6 @@
 
   (setq-local compilation-read-command nil)
 
-  (defun go-find-file ()
-    "Find file under $GOROOT."
-    (interactive)
-    (find-file (format "%s/src/" (getenv "GOROOT"))))
-
   (use-package go-add-tags :ensure t)
 
   (use-package go-errcheck
@@ -602,6 +597,11 @@
     (setq imenu-generic-expression
           '(("type" "^[ \t]*type *\\([^ \t\n\r\f]*[ \t]*\\(struct\\|interface\\)\\)" 1)
             ("func" "^func *\\(.*\\)" 1)))
+
+    (add-to-list 'lsp-clients-go-library-directories "/home/tj/dev/pkg/mod")
+    (add-to-list 'lsp-clients-go-library-directories "/home/tj/go")
+
+
     (which-function-mode)
     (highlight-symbol-mode)
     (subword-mode)
@@ -1667,6 +1667,11 @@
   :ensure t
   :config
 
+  (defun go-find-file ()
+    "Find file under $GOROOT."
+    (interactive)
+    (find-file (format "%s/src/" (getenv "GOROOT"))))
+
   (defun tj-counsel-ag ()
     (interactive)
     (counsel-ag nil (projectile-project-root)))
@@ -2049,11 +2054,9 @@
   :ensure t)
 
 (require 'resmacro)
-
 (global-set-key (kbd "C-x (") 'resmacro-start-macro)
 
 (require 'wordswitch)
-
 (require 'titlecase)
 
 (use-package unfill
@@ -2070,8 +2073,11 @@
 (use-package lsp-mode
   :ensure t
   :config
-  (add-to-list 'lsp-clients-go-library-directories "/home/tj/dev/pkg/mod")
-  (add-to-list 'lsp-clients-go-library-directories "/home/tj/go")
+
+  (add-to-list 'lsp-disabled-clients '(web-mode . angular-ls))
+  (add-to-list 'lsp-disabled-clients '(markdown-mode . angular-ls))
+  (add-to-list 'lsp-disabled-clients '(mhtml-mode . angular-ls))
+
   (lsp-register-client
    (make-lsp-client :new-connection (lsp-stdio-connection "html-languageserver")
                      :activation-fn (lambda (&rest _args)
@@ -2165,6 +2171,7 @@ EXTRA is a plist of extra parameters."
 
 (use-package proced-narrow
   :ensure t
+  :after proced
   :bind (:map proced-mode-map
               ("/" . proced-narrow)))
 
