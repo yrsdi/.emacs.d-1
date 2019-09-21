@@ -3,7 +3,7 @@
 (eval-and-compile
   (setq load-path
 	(append (delete-dups load-path)
-		'("~/.emacs.d/lisp"))))
+		(list (format "%s%s" user-emacs-directory "lisp")))))
 
 (require 'package)
 
@@ -2121,7 +2121,7 @@ EXTRA is a plist of extra parameters."
         lsp-ui-sideline-ignore-duplicate t))
 
 (use-package company-lsp
-  :demand t
+  :ensure t
   :commands company-lsp
   :config
   (setq company-lsp-cache-candidates 'auto)
