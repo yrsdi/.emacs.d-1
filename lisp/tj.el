@@ -122,6 +122,26 @@
 (global-set-key (kbd "C-c C-k") 'tj-kill-line-save)
 (global-set-key (kbd "s-l") 'goto-line)
 
+
+(defun my-bad-factorial (name)
+  (interactive)
+  (cl-letf (((symbol-function 'hello)
+             (lambda (name) (print name))))
+    (hello name)))
+
+(my-bad-factorial "travis")
+
+
+(defun tj-markdown-convert-code-blocks ()
+  (interactive)
+  (cl-letf (((symbol-function 'kill-ticks)
+             (lambda ()
+               (search-forward "```")
+               (beginning-of-line)
+               (kill-whole-line)
+               (point))))
+    (string-rectangle (kill-ticks) (kill-ticks) "	")))
+
 (defun tj-eshell (name)
   (interactive "sName: ")
   (let ((eshell-buffer-name (format "*eshell: %s*" name)))
@@ -312,7 +332,7 @@
 (global-set-key (kbd "s-x") #'execute-extended-command)
 
 (defun tj-multi-line-to-one-line (beg end)
-"Convert selected lines into one line and copy it in to the kill ring.
+  "Convert selected lines into one line and copy it in to the kill ring.
 When transient-mark-mode is enabled, If no region is active then only the
 current line is acted upon.
 
@@ -322,23 +342,23 @@ copied, even if the region is narrowed to the middle of a line.
 Current position is preserved."
   (interactive "r")
   (let (str (orig-pos (point-marker)))
-  (save-restriction
-    (widen)
-    (when (and transient-mark-mode (not (use-region-p)))
-      (setq beg (line-beginning-position)
-            end (line-beginning-position 2)))
+    (save-restriction
+      (widen)
+      (when (and transient-mark-mode (not (use-region-p)))
+        (setq beg (line-beginning-position)
+              end (line-beginning-position 2)))
 
-    (goto-char beg)
-    (setq beg (line-beginning-position))
-    (goto-char end)
-    (unless (= (point) (line-beginning-position))
-      (setq end (line-beginning-position 2)))
+      (goto-char beg)
+      (setq beg (line-beginning-position))
+      (goto-char end)
+      (unless (= (point) (line-beginning-position))
+        (setq end (line-beginning-position 2)))
 
-    (goto-char beg)
-    (setq str (replace-regexp-in-string "[ \t]*\n" "" (replace-regexp-in-string "^[ \t]+" "" (buffer-substring-no-properties beg end))))
-    ;; (message "str=%s" str)
-    (kill-new str)
-    (goto-char orig-pos))))
+      (goto-char beg)
+      (setq str (replace-regexp-in-string "[ \t]*\n" "" (replace-regexp-in-string "^[ \t]+" "" (buffer-substring-no-properties beg end))))
+      ;; (message "str=%s" str)
+      (kill-new str)
+      (goto-char orig-pos))))
 
 (defun tj-spongebob (start end)
   "Convert string from START to END to SpOnGeBoB meme."
@@ -367,10 +387,10 @@ Current position is preserved."
 (define-key 'help-command (kbd "C-i") #'info-display-manual)
 
 (defun tj-format-sql-region (beg end)
-    "Format SQL in region from BEG to END."
-    (interactive "r")
-    (save-excursion
-      (shell-command-on-region beg end "sql-formatter-cli" nil t)))
+  "Format SQL in region from BEG to END."
+  (interactive "r")
+  (save-excursion
+    (shell-command-on-region beg end "sql-formatter-cli" nil t)))
 
 (defun tj-format-sql-buffer ()
   "Format SQL in buffer."
@@ -380,7 +400,7 @@ Current position is preserved."
 (defun tj-thesaurus ()
   "Browse thesaurus."
   (interactive)
-  (tj--browse-word "https://powerthesaurus.org/%s/synonyms"))
+  (tj--browse-word "https://www.merriam-webster.com/thesaurus/%s"))
 
 (defun tj-dictionary ()
   "Browse dictionary."
@@ -482,6 +502,7 @@ them across multiple lines."
              "</${1:$(and (string-match \"[-A-Za-z0-9:_]+\" yas-text)"
 	     "(match-string 0 yas-text))}>"))))
 (global-set-key (kbd "C-c C-w") 'tj-wrap-with-tags)
+(define-key markdown-mode-map (kbd "C-c C-w") 'tj-wrap-with-tags)
 
 (defun tj-insert-open-and-close-tag ()
   "Generates an open and close HTML snippet using the current word."
@@ -518,6 +539,7 @@ them across multiple lines."
 			tag
 			">"))))))))
 (global-set-key (kbd "C-c <") 'tj-insert-open-and-close-tag)
+(define-key markdown-mode-map (kbd "C-c <") 'tj-insert-open-and-close-tag)
 
 (defun init-subword ()
   (let ((adv (cons 'advice

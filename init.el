@@ -498,13 +498,13 @@
 	("M-b" . subword-backward)
 	("M-f" . subword-forward)
 	("M-d" . subword-kill)
-	("C-c C-r" . godoctor-rename)
+	("C-c C-r" . lsp-rename)
 	("C-c C-t" . go-test-current-file)
 	("C-c M-t" . go-test-current-test)
 	;; ("M-s r" . lsp-find-references)
 	;; ("C-c <C-m>" . tj-go-kill-doc)
         ("C-c C-e" . tj-go-err)
-        ("C-c C-c" . godoc-at-point)
+        ("C-c C-c" . lsp-describe-thing-at-point)
         ("M-." . lsp-ui-peek-find-definitions))
   :config
 
@@ -578,7 +578,15 @@
       (let ((default-directory (projectile-project-root)))
 	(go-errcheck nil nil nil))))
 
-  (add-hook 'before-save-hook 'gofmt-before-save)
+  (defun tj-turn-on-gofmt-before-save ()
+    (interactive)
+    (add-hook 'before-save-hook 'gofmt-before-save))
+
+  (defun tj-turn-off-gofmt-before-save ()
+    (interactive)
+    (remove-hook 'before-save-hook 'gofmt-before-save))
+
+  (tj-turn-on-gofmt-before-save)
 
   (defun tj-go-kill-doc ()
     "Kill the doc for the thing at point."
@@ -600,7 +608,6 @@
 
     (add-to-list 'lsp-clients-go-library-directories "/home/tj/dev/pkg/mod")
     (add-to-list 'lsp-clients-go-library-directories "/home/tj/go")
-
 
     (which-function-mode)
     (highlight-symbol-mode)
@@ -2174,6 +2181,11 @@ EXTRA is a plist of extra parameters."
   :after proced
   :bind (:map proced-mode-map
               ("/" . proced-narrow)))
+
+(use-package mw-thesaurus
+  :ensure t
+  :bind (:map markdown-mode-map
+              ("C-c C-c d" . mw-thesaurus-lookup-at-point)))
 
 (require 'go-mod)
 (require 'prag-prog)
