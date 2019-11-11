@@ -734,6 +734,8 @@
 
 (use-package deadgrep
   :ensure t
+  :config
+  (setq deadgrep-executable "rg --hidden")
   :bind
   ("C-c a" . deadgrep))
 
