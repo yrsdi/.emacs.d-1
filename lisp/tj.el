@@ -560,6 +560,17 @@ them across multiple lines."
 
 (add-hook 'focus-out-hook 'garbage-collect)
 
+(defun tj-prowritingaid-to-markdown-format ()
+  (interactive)
+  (goto-char 0)
+  (replace-string "“" "\"")
+  (goto-char 0)
+  (replace-string "”" "\"")
+  (goto-char 0)
+  (replace-string "’" "'")
+  (goto-char 0)
+  (replace-string " " " "))
+
 ;; (define-key proced-mode-map (kbd "/") 'proced-narrow)
 
 (provide 'tj)
