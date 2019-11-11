@@ -1099,7 +1099,7 @@
 
   (unless (executable-find "pandoc")
     (message "install pandoc"))
-  (setq markdown-command "pandoc -f markdown_github -t html")
+  (setq markdown-command "pandoc --section-divs --from=markdown_github --highlight-style=haddock --self-contained --smart --to=html5 --css=$HOME/.config/css/style.css")
 
   :mode
   ("\\.markdown$" . markdown-mode)
