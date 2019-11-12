@@ -498,14 +498,10 @@
 	("M-b" . subword-backward)
 	("M-f" . subword-forward)
 	("M-d" . subword-kill)
-	("C-c C-r" . lsp-rename)
 	("C-c C-t" . go-test-current-file)
 	("C-c M-t" . go-test-current-test)
-	;; ("M-s r" . lsp-find-references)
 	;; ("C-c <C-m>" . tj-go-kill-doc)
-        ("C-c C-e" . tj-go-err)
-        ("C-c C-c" . lsp-describe-thing-at-point)
-        ("M-." . lsp-ui-peek-find-definitions))
+        ("C-c C-e" . tj-go-err))
   :config
 
   (setq go-test-args "-race -v")
@@ -605,9 +601,6 @@
     (setq imenu-generic-expression
           '(("type" "^[ \t]*type *\\([^ \t\n\r\f]*[ \t]*\\(struct\\|interface\\)\\)" 1)
             ("func" "^func *\\(.*\\)" 1)))
-
-    (add-to-list 'lsp-clients-go-library-directories "/home/tj/dev/pkg/mod")
-    (add-to-list 'lsp-clients-go-library-directories "/home/tj/go")
 
     (which-function-mode)
     (highlight-symbol-mode)
@@ -1309,13 +1302,6 @@
   :ensure t
   :defer t)
 
-;; (use-package helpful
-;;   :ensure t
-;;   :bind
-;;   (("C-h f" . helpful-callable)
-;;    ("C-h v" . helpful-variable)
-;;    ("C-h k" . helpful-key)))
-
 (use-package alert
   :ensure t
   :commands (alert)
@@ -1691,6 +1677,7 @@
    ("C-x C-f" . counsel-find-file)
    ("C-c p g" . go-find-file)
    ("C-h f"   . counsel-describe-function)
+   ("C-h v"   . counsel-describe-variable)
    ("C-x r b" . counsel-bookmark)
    ("M-x"     . counsel-M-x)
    ("C-x <C-m>"     . counsel-M-x)
@@ -2079,62 +2066,11 @@
   \(fn arg char)"
   'interactive)
 
-(use-package lsp-mode
-  :ensure t
-  :config
 
-  (add-to-list 'lsp-disabled-clients '(web-mode . angular-ls))
-  (add-to-list 'lsp-disabled-clients '(markdown-mode . angular-ls))
-  (add-to-list 'lsp-disabled-clients '(mhtml-mode . angular-ls))
-
-  (lsp-register-client
-   (make-lsp-client :new-connection (lsp-stdio-connection "html-languageserver")
-                     :activation-fn (lambda (&rest _args)
-                                   (string-match-p ".*\.html$" (buffer-file-name)))
-                  :priority 1
-                  :add-on? t
-                  :server-id 'html-ls))
-
-  ;; (setq lsp-eldoc-render-all t)
-
-  (add-to-list 'lsp-language-id-configuration '(clojure-mode . "clojure-mode"))
-
-  (cl-defun lsp-find-locations (method &optional extra &key display-action)
-    "Send request named METHOD and get cross references of the symbol under point.
-EXTRA is a plist of extra parameters."
-    (if-let ((loc (lsp-request method
-                               (append (lsp--text-document-position-params) extra))))
-        (let ((xrefs (lsp--locations-to-xref-items (if (sequencep loc)
-                                                       loc
-                                                     (list loc)))))
-          (xref--show-xrefs (if (functionp 'xref--create-fetcher)
-                                (-const xrefs)
-                              xrefs)
-                            display-action))
-      (message "Not found for: %s" (thing-at-point 'symbol t))))
-
-  :hook
-  (prog-mode . lsp-deferred)
-  :commands (lsp lsp-deferred lsp-find-definition)
-  :init
-  (setq lsp-auto-guess-root t))
-
-(use-package lsp-ui
-  :ensure t
-  :init
-  (setq lsp-ui-doc-enable nil
-        lsp-ui-doc-delay 0.1
-        lsp-ui-doc-include-signature t
-        lsp-ui-doc-position 'at-point
-        lsp-ui-sideline-enable nil
-        lsp-ui-sideline-ignore-duplicate t))
-
-(use-package company-lsp
-  :ensure t
-  :commands company-lsp
-  :config
-  (setq company-lsp-cache-candidates 'auto)
-  (add-to-list 'company-backends 'company-lsp))
+(use-package eglot
+  :bind
+  (("C-c C-c" . eglot-help-at-point))
+  :hook (go-mode . eglot-ensure))
 
 (use-package vdiff
   :ensure t)

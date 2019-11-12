@@ -571,6 +571,19 @@ them across multiple lines."
   (goto-char 0)
   (replace-string " " " "))
 
+(defun tj-remove-prag-prog-code-tags ()
+  (interactive)
+  (save-excursion
+    (goto-char 0)
+    (replace-regexp "^.*// END.*
+" "")
+    )
+
+  (save-excursion
+    (goto-char 0)
+    (replace-regexp "^.*// START.*
+" "")))
+
 ;; (define-key proced-mode-map (kbd "/") 'proced-narrow)
 
 (provide 'tj)
