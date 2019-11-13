@@ -2068,6 +2068,7 @@
 
 
 (use-package eglot
+  :ensure t
   :bind
   (("C-c C-c" . eglot-help-at-point))
   :hook (go-mode . eglot-ensure))
