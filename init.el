@@ -2070,7 +2070,8 @@
 (use-package eglot
   :ensure t
   :bind
-  (("C-c C-c" . eglot-help-at-point))
+  (("C-c C-c" . eglot-help-at-point)
+   ("C-c C-r" . eglot-rename))
   :hook (go-mode . eglot-ensure))
 
 (use-package vdiff
