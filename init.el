@@ -499,6 +499,7 @@
 	("M-f" . subword-forward)
 	("M-d" . subword-kill)
 	("C-c C-t" . go-test-current-file)
+	("C-c C-c" . godoc-at-point)
 	("C-c M-t" . go-test-current-test)
 	;; ("C-c <C-m>" . tj-go-kill-doc)
         ("C-c C-e" . tj-go-err))
@@ -601,6 +602,10 @@
     (setq imenu-generic-expression
           '(("type" "^[ \t]*type *\\([^ \t\n\r\f]*[ \t]*\\(struct\\|interface\\)\\)" 1)
             ("func" "^func *\\(.*\\)" 1)))
+
+    (when (boundp 'lsp-clients-go-library-directories)
+      (add-to-list 'lsp-clients-go-library-directories "/home/tj/dev/pkg/mod")
+      (add-to-list 'lsp-clients-go-library-directories "/home/tj/go"))
 
     (which-function-mode)
     (highlight-symbol-mode)
@@ -1062,7 +1067,34 @@
 (use-package easy-kill
   :ensure t
   :config
-  (global-set-key [remap kill-ring-save] 'easy-kill))
+  (global-set-key [remap kill-ring-save] 'easy-kill)
+  (global-set-key [remap mark-sexp] 'easy-mark))
+
+(use-package easy-kill-extras
+  :ensure t
+  :config
+
+  (global-set-key (kbd "M-@") 'easy-mark-word)
+  (global-set-key (kbd "C-M-@") 'easy-mark-sexp)
+
+  (global-set-key [remap zap-to-char] 'easy-mark-to-char)
+
+  ;; Integrate `expand-region' functionality with easy-kill
+  (define-key easy-kill-base-map (kbd "o") 'easy-kill-er-expand)
+  (define-key easy-kill-base-map (kbd "i") 'easy-kill-er-unexpand)
+
+
+  ;; Add the following tuples to `easy-kill-alist', preferrably by
+  ;; using `customize-variable'.
+  (add-to-list 'easy-kill-alist '(?^ backward-line-edge ""))
+  (add-to-list 'easy-kill-alist '(?$ forward-line-edge ""))
+  (add-to-list 'easy-kill-alist '(?b buffer ""))
+  (add-to-list 'easy-kill-alist '(?< buffer-before-point ""))
+  (add-to-list 'easy-kill-alist '(?> buffer-after-point ""))
+  (add-to-list 'easy-kill-alist '(?f string-to-char-forward ""))
+  (add-to-list 'easy-kill-alist '(?F string-up-to-char-forward ""))
+  (add-to-list 'easy-kill-alist '(?t string-to-char-backward ""))
+  (add-to-list 'easy-kill-alist '(?T string-up-to-char-backward "")))
 
 (use-package exec-path-from-shell
   :ensure t
@@ -1297,6 +1329,8 @@
   :defer t
   :config
   (setq org-journal-dir "~/Dropbox/journal"))
+
+
 
 (use-package org-web-tools
   :ensure t
@@ -1799,9 +1833,9 @@
 ;; config changes made through the customize UI will be stored here
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 
-(defadvice split-window (after move-point-to-new-window activate)
-  "Moves the point to the newly created window after splitting."
-  (other-window 1))
+;; (defadvice split-window (after move-point-to-new-window activate)
+;;   "Moves the point to the newly created window after splitting."
+;;   (other-window 1))
 
 ;; Functions and bindings.
 
@@ -2066,13 +2100,58 @@
   \(fn arg char)"
   'interactive)
 
-
-(use-package eglot
+(use-package lsp-mode
   :ensure t
   :bind
-  (("C-c C-c" . eglot-help-at-point)
-   ("C-c C-r" . eglot-rename))
-  :hook (go-mode . eglot-ensure))
+  (("C-c C-r" . lsp-rename))
+  :config
+
+
+  (add-to-list 'lsp-disabled-clients '(web-mode . angular-ls))
+  (add-to-list 'lsp-disabled-clients '(markdown-mode . angular-ls))
+  (add-to-list 'lsp-disabled-clients '(mhtml-mode . angular-ls))
+
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-stdio-connection "html-languageserver")
+                     :activation-fn (lambda (&rest _args)
+                                   (string-match-p ".*\.html$" (buffer-file-name)))
+                  :priority 1
+                  :add-on? t
+                  :server-id 'html-ls))
+
+  (setq lsp-eldoc-render-all t)
+
+  (add-to-list 'lsp-language-id-configuration '(clojure-mode . "clojure-mode"))
+
+  :hook
+  (prog-mode . lsp-deferred)
+  :commands (lsp lsp-deferred lsp-find-definition)
+  :init
+  (setq lsp-auto-guess-root t))
+
+(use-package lsp-ui
+  :ensure t
+  :init
+  (setq lsp-ui-doc-enable nil
+        lsp-ui-doc-delay 0.1
+        lsp-ui-doc-include-signature t
+        lsp-ui-doc-position 'at-point
+        lsp-ui-sideline-enable nil
+        lsp-ui-sideline-ignore-duplicate t))
+
+(use-package company-lsp
+  :ensure t
+  :commands company-lsp
+  :config
+  (setq company-lsp-cache-candidates 'auto)
+  (add-to-list 'company-backends 'company-lsp))
+
+;; (use-package eglot
+;;   :ensure t
+;;   :bind
+;;   (("C-c C-c" . eglot-help-at-point)
+;;    ("C-c C-r" . eglot-rename))
+;;   :hook (go-mode . eglot-ensure))
 
 (use-package vdiff
   :ensure t)

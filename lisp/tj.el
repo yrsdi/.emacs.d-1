@@ -586,4 +586,8 @@ them across multiple lines."
 
 ;; (define-key proced-mode-map (kbd "/") 'proced-narrow)
 
+(defadvice backward-kill-word (around fix activate)
+  (cl-flet ((kill-region (b e) (delete-region b e)))
+    ad-do-it))
+
 (provide 'tj)
