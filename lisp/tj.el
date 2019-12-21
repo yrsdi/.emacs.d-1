@@ -561,17 +561,18 @@ them across multiple lines."
 (add-hook 'focus-out-hook 'garbage-collect)
 
 (defun tj-prowritingaid-to-markdown-format ()
+  "Fix quotes after copying from ProWritingAid."
   (interactive)
-  (goto-char 0)
-  (replace-string "“" "\"")
-  (goto-char 0)
-  (replace-string "”" "\"")
-  (goto-char 0)
-  (replace-string "’" "'")
-  (goto-char 0)
-  (replace-string "‘" "'")
-  (goto-char 0)
-  (replace-string " " " "))
+  (let ((replacements
+         '(("“" . "\"")
+          ("”" . "\"")
+          ("’" . "'")
+          ("‘" . "'")
+          (" " . " "))))
+    (cl-loop for (key . value) in replacements
+             do (progn
+                  (goto-char 0)
+                  (replace-string key value)))))
 
 (defun tj-remove-prag-prog-code-tags ()
   (interactive)
