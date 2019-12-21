@@ -740,7 +740,7 @@
 (use-package whitespace
   :diminish
   :config
-  (setq whitespace-line-column nil))
+  (setq whitespace-line-column t))
 
 (use-package pt
   :ensure t)
@@ -2119,7 +2119,7 @@
                   :add-on? t
                   :server-id 'html-ls))
 
-  (setq lsp-eldoc-render-all t)
+  ;; (setq lsp-eldoc-render-all nil)
 
   (add-to-list 'lsp-language-id-configuration '(clojure-mode . "clojure-mode"))
 

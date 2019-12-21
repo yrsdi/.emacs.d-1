@@ -569,6 +569,8 @@ them across multiple lines."
   (goto-char 0)
   (replace-string "’" "'")
   (goto-char 0)
+  (replace-string "‘" "'")
+  (goto-char 0)
   (replace-string " " " "))
 
 (defun tj-remove-prag-prog-code-tags ()
