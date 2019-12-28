@@ -138,7 +138,6 @@
   (setq magit-refresh-status-buffer t)
 
   (magit-define-section-jumper magit-jump-to-recent-commits "Recent commits" recent "HEAD~10..HEAD")
-  (define-key magit-status-mode-map "jrc" 'magit-jump-to-recent-commits)
 
   (defun tj-semaphore-open-branch ()
     "Open branch in Semaphore CI"
@@ -2038,9 +2037,9 @@
 
 (use-package magit-todos
   :ensure t
+  :commands (magit-todos-mode)
   :config
-  (setq magit-todos-exclude-globs '("dist" "node_modules"))
-  (magit-todos-mode))
+  (setq magit-todos-exclude-globs '("dist" "node_modules")))
 
 
 (use-package terraform-mode
