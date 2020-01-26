@@ -4,12 +4,12 @@
 
 (menu-bar-mode -1)
 
-(add-hook 'prog-mode-hook 'disable-font-lock-mode)
 (add-hook 'prog-mode-hook 'hs-minor-mode)
-(add-hook 'protobuf-mode-hook 'disable-font-lock-mode)
-(add-hook 'text-mode-hook 'disable-font-lock-mode)
-(add-hook 'conf-mode-hook 'disable-font-lock-mode)
-(add-hook 'compilation-mode-hook 'disable-font-lock-mode)
+;; (add-hook 'prog-mode-hook 'disable-font-lock-mode)
+;; (add-hook 'protobuf-mode-hook 'disable-font-lock-mode)
+;; (add-hook 'text-mode-hook 'disable-font-lock-mode)
+;; (add-hook 'conf-mode-hook 'disable-font-lock-mode)
+;; (add-hook 'compilation-mode-hook 'disable-font-lock-mode)
 
 (setq user-full-name "Travis Jeffery"
       user-mail-address "tj@travisjeffery.com")
@@ -17,7 +17,7 @@
 ;; turn off mode-line
 ;; (setq-default mode-line-format nil)
 
-(setq-default fill-column 100)
+(setq-default fill-column 84)
 
 ;; open help, ack, etc. in the same window
 ;; (setq-default same-window-regexps '("."))
@@ -122,15 +122,10 @@
 (global-set-key (kbd "C-c C-k") 'tj-kill-line-save)
 (global-set-key (kbd "s-l") 'goto-line)
 
-
-(defun my-bad-factorial (name)
+(defun tj-goland ()
+  "Open current project in Goland."
   (interactive)
-  (cl-letf (((symbol-function 'hello)
-             (lambda (name) (print name))))
-    (hello name)))
-
-(my-bad-factorial "travis")
-
+  (async-shell-command (format "goland %s" (projectile-project-root))))
 
 (defun tj-markdown-convert-code-blocks ()
   (interactive)
@@ -417,7 +412,8 @@ Current position is preserved."
 
 (defun tj-sql-mode-hook ()
   (add-hook 'after-save-hook 'tj-format-sql-buffer nil t))
-(add-hook 'sql-mode-hook 'tj-sql-mode-hook)
+;; (add-hook 'sql-mode-hook 'tj-sql-mode-hook)
+(remove-hook 'sql-mode-hook 'tj-sql-mode-hook)
 
 ;; smart tab behavior - indent or complete
 (setq tab-always-indent 'complete)
