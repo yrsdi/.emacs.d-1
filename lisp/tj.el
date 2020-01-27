@@ -589,6 +589,29 @@ them across multiple lines."
 
 ;; (define-key proced-mode-map (kbd "/") 'proced-narrow)
 
+(defun tj-arrayify (beg end)
+  "Wrap each line from BEG to END in quotes and join them in a line."
+  (interactive "r")
+  (replace-region-contents beg end
+                          (lambda ()
+                            (-> (buffer-substring-no-properties beg end)
+                                (split-string "\n")
+                                (->>
+                                 (remove "")
+                                 (cl-mapcar (lambda (x)
+                                              (format "\"\%s\"" x))))
+                                (string-join ", "))))
+  (end-of-line))
+
+(defun tj-browse-urls (beg end)
+  "Browse the URL on every line between BEG and END."
+  (interactive "r")
+  (goto-char beg)
+  (while (< (point) end)
+    (beginning-of-line)
+    (browse-url-at-point)
+    (forward-line)))
+
 (defadvice backward-kill-word (around fix activate)
   (cl-flet ((kill-region (b e) (delete-region b e)))
     ad-do-it))
