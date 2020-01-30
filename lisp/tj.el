@@ -612,6 +612,8 @@ them across multiple lines."
     (browse-url-at-point)
     (forward-line)))
 
+(setq gc-cons-threshold 300000000)
+
 (defadvice backward-kill-word (around fix activate)
   (cl-flet ((kill-region (b e) (delete-region b e)))
     ad-do-it))

@@ -16,7 +16,7 @@
 (unless package-archive-contents
   (package-refresh-contents))
 
-(set-frame-font "IBM Plex Mono Text 11" nil t)
+(set-frame-font "IBM Plex Mono Text 10" nil t)
 
 (define-key isearch-mode-map (kbd "C-o") #'isearch-occur)
 
@@ -43,6 +43,12 @@
           ("M-i" . my-m-i-map)
           ("M-o" . my-m-o-map)
           )))
+
+
+(use-package undo-fu
+  :ensure t
+  :bind (("C-z"   . undo-fu-only-undo)
+         ("C-S-z" . undo-fu-only-redo)))
 
 (use-package visual-fill-column
   :ensure t
