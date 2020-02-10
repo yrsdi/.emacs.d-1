@@ -16,7 +16,7 @@
 (unless package-archive-contents
   (package-refresh-contents))
 
-(set-frame-font "Go Mono 10" nil t)
+(set-frame-font "IBM Plex Mono Text 10" nil t)
 
 (define-key isearch-mode-map (kbd "C-o") #'isearch-occur)
 
