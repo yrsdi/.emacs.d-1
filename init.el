@@ -504,7 +504,7 @@
 	("M-f" . subword-forward)
 	("M-d" . subword-kill)
 	("C-c C-t" . go-test-current-file)
-	("C-c C-c" . godoc-at-point)
+	("C-c C-c" . lsp-describe-thing-at-point)
 	("C-c M-t" . go-test-current-test)
 	;; ("C-c <C-m>" . tj-go-kill-doc)
         ("C-c C-e" . tj-go-err))
@@ -620,7 +620,7 @@
     (electric-indent-mode)
     (electric-pair-mode 1)
     (selected-minor-mode 1)
-    (font-lock-mode -1)
+    ;; (font-lock-mode -1)
     (setq company-backends '(company-go))
     (go-guru-hl-identifier-mode)
     (if (not (string-match "go" compile-command))
@@ -741,11 +741,6 @@
   (setq deadgrep-executable "rg --hidden")
   :bind
   ("C-c a" . deadgrep))
-
-(use-package whitespace
-  :diminish
-  :config
-  (setq whitespace-line-column t))
 
 (use-package pt
   :ensure t)
@@ -1116,13 +1111,11 @@
    ("M-N" . move-text-down)))
 
 (use-package whitespace
-  :init
-  (dolist (hook '(prog-mode-hook))
-    (add-hook hook #'whitespace-mode))
+  :config
   (add-hook 'before-save-hook #'whitespace-cleanup)
   :config
-  (setq whitespace-line-column 80) ;; limit line length
-  (setq whitespace-style '(face tabs empty trailing lines-tail)))
+  (setq whitespace-line-column 84) ;; limit line length
+  (setq whitespace-style '(face empty lines trailing)))
 
 (use-package markdown-mode
   :config
